@@ -3,7 +3,7 @@ import stainless.collection._
 import stainless.collection.ListSpecs._
 import stainless.proof._
 
-object ListReverse {
+object reverse {
 
   def consRev[T](l: List[T], x: T): Boolean = {
     (x :: l).reverse == l.reverse :+ x
