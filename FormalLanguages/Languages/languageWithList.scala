@@ -156,6 +156,42 @@ object LangSpecs {
     reverseAll(List(list)) == List(list.reverse)
   }.holds
 
+  def doubleReverseCombineList[T](l1: List[List[T]], l2: List[List[T]]): Boolean = {
+    combineLists(l1,l2) == reverseAll(combineLists(reverseAll(l2), reverseAll(l1)))
+  }.holds
+
+  def reverseAllConcat[T](l1: List[List[T]], l2: List[List[T]]): Boolean = {
+    reverseAll(l1 ++ l2) == reverseAll(l1) ++ reverseAll(l2) because {
+      l2 match {
+        case Nil() => true
+        case x :: xs => {
+          check {(reverseAll(l1) ++ reverseAll(x :: xs)) == (reverseAll(l1) ++ (x.reverse :: reverseAll(xs)))} &&
+          check {(reverseAll(l1) ++ (x.reverse :: reverseAll(xs))) == ((reverseAll(l1) :+ x.reverse) ++ reverseAll(xs)) because {snocGoesHead(reverseAll(l1), x.reverse, reverseAll(xs))}} &&
+          check {((reverseAll(l1) :+ x.reverse) ++ reverseAll(xs)) == (reverseAll(l1 :+ x) ++ reverseAll(xs)) because{reverseAllDistributiveOverSnoc(l1,x)}} &&
+          check {(reverseAll(l1 :+ x) ++ reverseAll(xs)) == (reverseAll((l1 :+ x) ++ xs)) because {reverseAllConcat(l1 :+ x, xs)}} &&
+          check {(reverseAll((l1 :+ x) ++ xs)) == (reverseAll(l1 ++ (x :: xs))) because {snocGoesHead(l1,x,xs)}}
+        }
+      }
+    }
+  }.holds
+
+  def reverseAllDistributiveOverSnoc[T](l: List[List[T]], t: List[T]): Boolean = { //or name should be the other way around???
+    (reverseAll(l) :+ t.reverse) == reverseAll(l :+ t) because {
+      l match {
+        case Nil() => true
+        case x :: xs => reverseAllDistributiveOverSnoc(xs, t)
+      }
+    }
+  }.holds
+
+  def snocGoesHead[T](l1: List[T], x: T,l2: List[T]) : Boolean = {
+    ((l1 :+ x) ++ l2) == (l1 ++ (x :: l2)) because {
+      check {((l1 :+ x) ++ l2) == ((l1 ++ Cons[T](x, Nil())) ++ l2) because {ListSpecs.snocIsAppend(l1,x)}} &&
+      check {((l1 ++ Cons[T](x, Nil())) ++ l2) == (l1 ++ (Cons[T](x, Nil()) ++ l2)) because {ListSpecs.appendAssoc(l1, Cons[T](x, Nil()), l2)}} &&
+      check {(l1 ++ (Cons[T](x, Nil()) ++ l2)) == (l1 ++ (x :: l2))}
+    }
+  }.holds
+
   def leftUnitCombine[T](l1: Lang[T]): Boolean = {
     unitLang().combine(l1) == l1 because {
       l1 match {
@@ -196,6 +232,26 @@ object LangSpecs {
   }.holds
 
   def combineDistributiveLeft[T](w: List[T], l1: Lang[T], l2: Lang[T]): Boolean = {
-    ( (w ::  l1) combine l2) == Lang[T](prependToAll(w, l2.list)) ++ (l1 combine l2)
+    ( (w ::  l1) combine l2) == Lang[T](prependToAll(w, l2.list)) ++ (l1 combine l2) because {
+      ((w ::  l1) combine l2)                                                           ==| trivial                                           |
+      Lang[T](combineLists((w ::  l1).list, l2.list))                                   ==| trivial                                           |
+      Lang[T](combineLists((w ::  l1.list), l2.list))                                   ==| combineDistributiveLeftHelper(w,l1.list,l2.list)  |
+      Lang[T](prependToAll(w, l2.list) ++ combineLists(l1.list, l2.list))               ==| trivial                                           |
+      Lang[T](prependToAll(w, l2.list)) ++ Lang[T](combineLists(l1.list, l2.list))      ==| trivial                                           |
+      Lang[T](prependToAll(w, l2.list)) ++ (l1 combine l2)
+    }.qed
   }.holds
+
+  def combineDistributiveLeftHelper[T](w: List[T], l1: List[List[T]], l2: List[List[T]]): Boolean = {
+    combineLists((w ::  l1), l2) == prependToAll(w, l2) ++ combineLists(l1, l2) because {
+      combineLists((w ::  l1), l2)                                                                                    ==| doubleReverseCombineList((w::l1),l2) |
+      reverseAll(combineLists(reverseAll(l2), reverseAll((w ::  l1))))                                                ==| trivial |
+      reverseAll(combineLists(reverseAll(l2), w.reverse :: reverseAll(l1)))                                           ==| trivial |
+      reverseAll(appendToAll(reverseAll(l2), w.reverse) ++ combineLists(reverseAll(l2), reverseAll(l1)))              ==| reverseAllConcat(appendToAll(reverseAll(l2), w.reverse), combineLists(reverseAll(l2), reverseAll(l1))) |
+      reverseAll(appendToAll(reverseAll(l2), w.reverse)) ++ reverseAll(combineLists(reverseAll(l2), reverseAll(l1)))  ==| trivial |
+      prependToAll(w, l2) ++ reverseAll(combineLists(reverseAll(l2), reverseAll(l1)))                                 ==| doubleReverseCombineList(l1, l2) |
+      prependToAll(w, l2) ++ combineLists(l1, l2)
+    }.qed
+  }.holds
+
 }
