@@ -440,6 +440,7 @@ object ListOfListsSpecs {
       check {
         (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++ reverseAll(combineLists(xs, y::ys)))).content ==
         (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++ reverseAll(reverseAll(combineLists(reverseAll(y::ys), reverseAll(xs)))))).content because {
+              //doubleReverseCombineListHelper1(appendToAll(y.reverse :: reverseAll(ys), x.reverse), xs, y::ys)
               check {
                 (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++ reverseAll(combineLists(xs, y::ys)))).content ==
                 (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse)) ++ reverseAll(reverseAll(combineLists(xs, y::ys)))).content because {
