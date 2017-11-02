@@ -41,69 +41,41 @@ case class Lang[T](list: List[List[T]]) {
   def contains(word: List[T]): Boolean = list.contains(word)
 }
 
-object LangSpecs {
-
-
-  //the equals operator is symmectric, which means that if a == b than b==a
-  def equalsAssoc[T](l1: Lang[T], l2: Lang[T]): Boolean = {
-    (l1 == l2) == (l2 == l1)
-  }.holds
-
-  //It should verify by definition
-  def combinationLemma[T](l1: Lang[T], l2: Lang[T]): Boolean = {
-    (l1 combine l2) == Lang[T](combineLists(l1.list, l2.list))
-  }.holds
-
-  def reverseCombinationLemma[T](l1: Lang[T], l2: Lang[T]): Boolean = {
-    Lang[T](combineLists(l1.list, l2.list)) == (l1 combine l2) because {
-      combinationLemma(l1,l2) && equalsAssoc((l1 combine l2), Lang[T](combineLists(l1.list, l2.list)))
-    }
-  }.holds
-
+object Lang {
   def unitLang[T](): Lang[T] = Lang[T](List(Nil()))
-
   def nullLang[T](): Lang[T] = Lang[T](Nil())
+}
+
+import Lang._
+
+object LangSpecs {
 
   def rightUnitCombine[T](l1: Lang[T]): Boolean = {
 
-    l1.combine(unitLang()) == l1 because {
+    l1.combine(unitLang()) sameAs l1 because {
       l1 match {
-        case Lang(Nil()) => check {l1.combine(unitLang()) == l1}
+        case Lang(Nil()) => true
         case Lang(x :: xs) => {
           Lang[T](x :: xs).combine(unitLang())                                          ==| trivial                                             |
           (x:: Lang[T](xs)).combine(unitLang())                                         ==| combineDistributiveLeft(x, Lang[T](xs), unitLang()) |
-          Lang[T](prependToAll(x, unitLang().list)) ++ (Lang[T](xs) combine unitLang()) ==| prependToUnitLang(x)                                |
+          Lang[T](prependToAll(x, unitLang().list)) ++ (Lang[T](xs) combine unitLang()) ==| prependToEmptyList(x)                               |
           Lang[T](List(x)) ++ (Lang[T](xs) combine unitLang())                          ==| rightUnitCombine(Lang[T](xs))                       |
           Lang[T](List(x)) ++ Lang[T](xs)                                               ==| trivial                                             |
-          Lang[T](List(x) ++ xs)                                                        ==| trivial                                             |
           Lang[T](x :: xs)
         }.qed
       }
     }
   }.holds
 
-  def prependToUnitLang[T](prefix: List[T]): Boolean = {
-    prependToAll(prefix, unitLang().list) == List(prefix) because {
-      prependToAll(prefix, unitLang().list)                                                                 ==| trivial |
-      prependToAll(prefix, List[List[T]](Nil[T]()))                                                         ==| prependToAllLemma(prefix, List[List[T]](Nil[T]())) |
-      reverseAll(appendToAll(reverseAll(List[List[T]](Nil[T]())), prefix.reverse))                          ==| trivial |
-      reverseAll(appendToAll(List[List[T]](Nil[T]()),prefix.reverse))                                       ==| trivial |
-      reverseAll(List(prefix.reverse))                                                                      ==| trivial |
-      List(prefix.reverse.reverse)                                                                          ==| ListSpecs.reverseReverse(prefix) |
-      List(prefix)
-    }.qed
-  }.holds
-
   def leftUnitCombine[T](l1: Lang[T]): Boolean = {
-    unitLang().combine(l1) == l1 because {
+    unitLang().combine(l1) sameAs l1 because {
       l1 match {
-        case Lang(Nil()) => check {unitLang().combine(l1) == l1}
+        case Lang(Nil()) => true
         case Lang(x :: xs) => {
           (unitLang().combine(x ::Lang[T](xs)))                                           ==| combineDistributiveRight(unitLang(), x, Lang[T](xs))  |
           (Lang[T](appendToAll(unitLang().list, x)) ++ (unitLang() combine  Lang[T](xs))) ==| trivial                                             |
           (Lang[T](List(x)) ++ (unitLang() combine  Lang[T](xs)))                         ==| leftUnitCombine(Lang[T](xs))                        |
           (Lang[T](List(x)) ++  Lang[T](xs))                                              ==| trivial                                             |
-          Lang[T](List(x) ++ xs)                                                          ==| trivial                                             |
           Lang[T](x :: xs)
         }.qed
       }
@@ -111,36 +83,32 @@ object LangSpecs {
   }.holds
 
   def rightNullCombine[T](l1: Lang[T]): Boolean = {
-    l1.combine(nullLang[T]()) == nullLang[T]()
+    l1.combine(nullLang[T]()) sameAs nullLang[T]()
   }.holds
 
   def leftNullCombine[T](l1: Lang[T]): Boolean = {
-    nullLang[T]().combine(l1) == nullLang[T]()
+    nullLang[T]().combine(l1) sameAs nullLang[T]()
   }.holds
 
   def associativity[T](l1: Lang[T], l2: Lang[T], l3:Lang[T]): Boolean = {
-    (l1 combine (l2 combine l3)) == ((l1 combine l2) combine l3)
+    (l1 combine (l2 combine l3)) sameAs ((l1 combine l2) combine l3)
   }.holds
 
   def combineDistributiveRight[T](l1: Lang[T], w: List[T], l2: Lang[T]): Boolean = {
-    ((l1 combine (w :: l2)) == (Lang[T](appendToAll(l1.list, w)) ++ (l1 combine l2))) because {
-      (l1 combine (w :: l2))                                                      ==| combinationLemma(l1, w::l2) |
-      Lang[T](combineLists(l1.list, (w :: l2).list))                              ==| trivial |
-      Lang[T](combineLists(l1.list, w :: l2.list))                                ==| trivial |
-      Lang[T](appendToAll(l1.list, w) ++ combineLists(l1.list, l2.list))          ==| trivial |
-      Lang[T](appendToAll(l1.list, w)) ++ Lang[T](combineLists(l1.list, l2.list)) ==| reverseCombinationLemma(l1, l2) |
-      Lang[T](appendToAll(l1.list, w)) ++ (l1 combine l2)
-    }.qed
+    ((l1 combine (w :: l2)) sameAs (Lang[T](appendToAll(l1.list, w)) ++ (l1 combine l2)))
   }.holds
 
   def combineDistributiveLeft[T](w: List[T], l1: Lang[T], l2: Lang[T]): Boolean = {
-    ( (w ::  l1) combine l2) == Lang[T](prependToAll(w, l2.list)) ++ (l1 combine l2) because {
-      ((w ::  l1) combine l2)                                                           ==| trivial                                           |
-      Lang[T](combineLists((w ::  l1).list, l2.list))                                   ==| trivial                                           |
-      Lang[T](combineLists((w ::  l1.list), l2.list))                                   ==| combineDistributiveLeftHelper(w,l1.list,l2.list)  |
-      Lang[T](prependToAll(w, l2.list) ++ combineLists(l1.list, l2.list))               ==| trivial                                           |
-      Lang[T](prependToAll(w, l2.list)) ++ Lang[T](combineLists(l1.list, l2.list))      ==| trivial                                           |
-      Lang[T](prependToAll(w, l2.list)) ++ (l1 combine l2)
-    }.qed
+    ( (w ::  l1) combine l2) sameAs Lang[T](prependToAll(w, l2.list)) ++ (l1 combine l2) because {
+        combineListDistributiveLeft(w,l1.list,l2.list)
+    }
+  }.holds
+
+  def listContentEquals[T](l1: List[T], l2: List[T]): Boolean = {
+    (l1 == l2) ==> (l1.content == l2.content)
+  }.holds
+
+  def equalityIsSame[T](l1: Lang[T], l2: Lang[T]): Boolean = {
+    (l1 == l2) ==> (l1 sameAs l2)
   }.holds
 }
