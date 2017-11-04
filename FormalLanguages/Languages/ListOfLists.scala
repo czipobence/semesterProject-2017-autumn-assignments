@@ -3,6 +3,9 @@ import stainless.collection._
 import stainless.proof._
 import stainless.annotation._
 
+//import DoubleReverseCombineList._
+
+
 object ListSpecsExt {
 
   /*
@@ -30,7 +33,10 @@ object ListOfLists {
   }.ensuring {res: List[List[T]] => res.size == l.size &&
     !l.isEmpty ==> res.contains(l.head ++ suffix)}
 
-  def prependToAll[T](prefix: List[T], l: List[List[T]]): List[List[T]] = reverseAll(appendToAll(reverseAll(l) , prefix.reverse))
+  def prependToAll[T](prefix: List[T], l: List[List[T]]): List[List[T]] = l match {
+    case Nil() => Nil[List[T]]()
+    case x :: xs => (prefix ++ x) :: prependToAll(prefix, xs)
+  }
 
   def reverseAll[T](l: List[List[T]]): List[List[T]] ={
     l match {
@@ -54,12 +60,45 @@ import ListOfLists._
 
 object ListOfListsSpecs {
 
+
   def prependToAllLemmaMap[T](prefix: List[T], l: List[List[T]]): Boolean = {
     prependToAllMap(prefix,l) == appendToAll(l.map(lst => lst.reverse) , prefix.reverse).map(lst => lst.reverse)
   }.holds
 
   def prependToAllLemma[T](prefix: List[T], l: List[List[T]]): Boolean = {
-    prependToAll(prefix,l) == reverseAll(appendToAll(reverseAll(l) , prefix.reverse))
+    prependToAll(prefix,l) == reverseAll(appendToAll(reverseAll(l) , prefix.reverse)) because {
+      l match {
+        case Nil() => true
+        case x :: xs => {
+          prependToAll(prefix,x::xs)                                                                                      ==| trivial |
+          (prefix ++ x) :: prependToAll(prefix,xs)                                                                        ==| doubleReverseAll((prefix ++ x) :: prependToAll(prefix,xs)) |
+          reverseAll(reverseAll((prefix ++ x) :: prependToAll(prefix,xs)))                                                ==| trivial |
+          reverseAll((prefix ++ x).reverse :: reverseAll(prependToAll(prefix,xs)))                                        ==| ListSpecs.reverseAppend(prefix,x) |
+          reverseAll((x.reverse ++ prefix.reverse) :: reverseAll(prependToAll(prefix,xs)))                                ==| prependToAllLemma(prefix,xs) |
+          reverseAll((x.reverse ++ prefix.reverse) :: reverseAll(reverseAll(appendToAll(reverseAll(xs),prefix.reverse)))) ==| doubleReverseAll(appendToAll(reverseAll(xs),prefix.reverse)) |
+          reverseAll((x.reverse ++ prefix.reverse) :: appendToAll(reverseAll(xs),prefix.reverse))                         ==| trivial |
+          reverseAll(appendToAll(x.reverse :: reverseAll(xs), prefix.reverse))                                            ==| trivial |
+          reverseAll(appendToAll(reverseAll(x::xs), prefix.reverse))
+        }.qed
+      }
+    }
+  }.holds
+
+  def reversePrependToAllLemma[T](prefix: List[T], l: List[List[T]]): Boolean = {
+    reverseAll(prependToAll(prefix,l)) == appendToAll(reverseAll(l), prefix.reverse) because {
+      reverseAll(prependToAll(prefix,l))                                  ==| prependToAllLemma(prefix, l) |
+      reverseAll(reverseAll(appendToAll(reverseAll(l), prefix.reverse)))  ==| doubleReverseAll(appendToAll(reverseAll(l), prefix.reverse)) |
+      appendToAll(reverseAll(l), prefix.reverse)
+    }.qed
+  }.holds
+
+  def reverseAppendToAllLemma[T](l: List[List[T]], suffix: List[T]): Boolean = {
+    reverseAll(appendToAll(l,suffix)) == prependToAll(suffix.reverse, reverseAll(l)) because {
+      reverseAll(appendToAll(l,suffix))                                         ==| doubleReverseAll(l)                               |
+      reverseAll(appendToAll(reverseAll(reverseAll(l)),suffix))                 ==| ListSpecs.reverseReverse(suffix)                  |
+      reverseAll(appendToAll(reverseAll(reverseAll(l)),suffix.reverse.reverse)) ==| prependToAllLemma(suffix.reverse, reverseAll(l))  |
+      prependToAll(suffix.reverse, reverseAll(l))
+    }.qed
   }.holds
 
   //reverseAll for SingleList, actually trivial
@@ -79,488 +118,6 @@ object ListOfListsSpecs {
         }.qed
       }
     }
-  }.holds
-
-  //Question: If the function is too long, it just can't verify even trivial steps
-  def doubleReverseCombineList[T](l1: List[List[T]], l2: List[List[T]]): Boolean = {
-    decreases(l1. size + l2.size)
-    combineLists(l1,l2).content == reverseAll(combineLists(reverseAll(l2), reverseAll(l1))).content because {
-      l2 match {
-        case Nil() => true
-        case y::ys => l1 match {
-          case Nil() => true
-          case x::xs => {
-            check{
-              combineLists(x::xs,y::ys).content ==
-                 (
-                   ((x ++ y) :: (appendToAll(xs, y))) ++
-                   reverseAll(
-                     appendToAll(reverseAll(ys), x.reverse)
-                   ) ++
-                   reverseAll(
-                     combineLists(reverseAll(ys), reverseAll(xs))
-                   )
-                 ).content because {
-                   doubleReverseCombineListPt1(x,xs,y,ys)
-                 }
-            }  &&
-            check{
-              (
-                ((x ++ y) :: (appendToAll(xs, y))) ++
-                reverseAll(
-                  appendToAll(reverseAll(ys), x.reverse)
-                ) ++
-                reverseAll(
-                  combineLists(reverseAll(ys), reverseAll(xs))
-                )
-              ).content ==
-              (
-                reverseAll(
-                  List(y.reverse ++ x.reverse) ++
-                  appendToAll(reverseAll(ys), x.reverse) ++
-                  reverseAll(appendToAll(xs, y)) ++
-                  combineLists(reverseAll(ys), reverseAll(xs))
-                )
-              ).content because {
-                doubleReverseCombineListPt2(x,xs,y,ys)
-              }
-            } &&
-            check {
-              reverseAll(
-                List(y.reverse ++ x.reverse) ++
-                appendToAll(reverseAll(ys), x.reverse) ++
-                reverseAll(appendToAll(xs, y)) ++
-                combineLists(reverseAll(ys), reverseAll(xs))
-              ).content ==
-              (
-                reverseAll(
-                  appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-                  reverseAll(
-                    combineLists(xs, y::ys)
-                  )
-                )
-              ).content
-               because {
-                doubleReverseCombineListPt3(x,xs,y,ys)
-              }
-            }
-            check {
-              (
-                reverseAll(
-                  appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-                  reverseAll(
-                    combineLists(xs, y::ys)
-                  )
-                )
-              ).content ==
-              reverseAll(combineLists(reverseAll(y::ys), reverseAll(x::xs))).content because {
-                doubleReverseCombineListPt4(x,xs,y,ys)
-              }
-            }
-          }
-        }
-      }
-    }
-  }.holds
-
-  def doubleReverseCombineListPt1[T](x: List[T], xs: List[List[T]], y: List[T], ys: List[List[T]]):Boolean = {
-    //decreases(xs.size + ys.size)
-    combineLists(x::xs,y::ys).content == (((x ++ y) :: (appendToAll(xs, y))) ++ reverseAll(appendToAll(reverseAll(ys), x.reverse)) ++ reverseAll(combineLists(reverseAll(ys), reverseAll(xs)))).content because {
-      check{
-        combineLists(x::xs,y::ys).content == (appendToAll(x::xs, y) ++ combineLists(x::xs, ys)).content
-      } &&
-      check{
-        (appendToAll(x::xs, y) ++ combineLists(x::xs, ys)).content ==
-        (appendToAll(x::xs, y) ++ reverseAll(combineLists(reverseAll(ys), reverseAll(x::xs)))).content because {
-          true//doubleReverseCombineList(x::xs, ys)
-        }
-      }  &&
-      check{
-        (appendToAll(x::xs, y) ++ reverseAll(combineLists(reverseAll(ys), reverseAll(x::xs)))).content ==
-          (appendToAll(x::xs, y) ++ reverseAll(combineLists(reverseAll(ys), x.reverse :: reverseAll(xs)))).content
-      }  &&
-      check{
-        (appendToAll(x::xs, y) ++ reverseAll(combineLists(reverseAll(ys), x.reverse :: reverseAll(xs)))).content ==
-          (appendToAll(x::xs, y) ++ reverseAll(appendToAll(reverseAll(ys), x.reverse) ++ combineLists(reverseAll(ys), reverseAll(xs)))).content
-      }  &&
-      check{
-        (appendToAll(x::xs, y) ++ reverseAll(appendToAll(reverseAll(ys), x.reverse) ++ combineLists(reverseAll(ys), reverseAll(xs)))).content ==
-          (appendToAll(x::xs, y) ++ reverseAll(appendToAll(reverseAll(ys), x.reverse)) ++ reverseAll(combineLists(reverseAll(ys), reverseAll(xs)))).content because {
-            reverseAllConcat(appendToAll(reverseAll(ys), x.reverse), combineLists(reverseAll(ys), reverseAll(xs)))
-          }
-      }  &&
-      check{
-        (appendToAll(x::xs, y) ++ reverseAll(appendToAll(reverseAll(ys), x.reverse)) ++ reverseAll(combineLists(reverseAll(ys), reverseAll(xs)))).content ==
-           (((x ++ y) :: (appendToAll(xs, y))) ++ reverseAll(appendToAll(reverseAll(ys), x.reverse)) ++ reverseAll(combineLists(reverseAll(ys), reverseAll(xs)))).content
-      }
-    }
-
-  }.holds
-
-
-  def doubleReverseCombineListPt2[T](x: List[T], xs: List[List[T]], y: List[T], ys: List[List[T]]): Boolean = {
-    (
-      ((x ++ y) :: (appendToAll(xs, y))) ++
-      reverseAll(
-        appendToAll(reverseAll(ys), x.reverse)
-      ) ++
-      reverseAll(
-        combineLists(reverseAll(ys), reverseAll(xs))
-      )
-    ).content ==
-    (
-      reverseAll(
-        List(y.reverse ++ x.reverse) ++
-        appendToAll(reverseAll(ys), x.reverse) ++
-        reverseAll(appendToAll(xs, y)) ++
-        combineLists(reverseAll(ys), reverseAll(xs))
-      )
-    ).content because {
-      check{
-        (
-          ((x ++ y) :: (appendToAll(xs, y))) ++
-          reverseAll(
-            appendToAll(reverseAll(ys), x.reverse)
-          ) ++
-          reverseAll(
-            combineLists(reverseAll(ys), reverseAll(xs))
-          )
-        ).content ==
-        (
-          reverseAll(
-            List(y.reverse ++ x.reverse)
-          ) ++
-          reverseAll(
-            reverseAll(appendToAll(xs, y))
-          ) ++
-          reverseAll(
-            appendToAll(reverseAll(ys), x.reverse)
-          ) ++
-          reverseAll(combineLists(reverseAll(ys), reverseAll(xs)))
-        ).content because {
-          doubleReverseAppendConsLemma(x,y,appendToAll(xs, y))
-        }
-      } &&
-      check {
-        (
-          reverseAll(
-            List(y.reverse ++ x.reverse)
-          ) ++
-          reverseAll(
-            reverseAll(appendToAll(xs, y))
-          ) ++
-          reverseAll(
-            appendToAll(reverseAll(ys), x.reverse)
-          ) ++
-          reverseAll(combineLists(reverseAll(ys), reverseAll(xs)))
-        ).content ==
-        (
-          reverseAll(
-            List(y.reverse ++ x.reverse)
-          ) ++
-          reverseAll(
-            appendToAll(reverseAll(ys), x.reverse)
-          ) ++
-          reverseAll(
-            reverseAll(appendToAll(xs, y))
-          ) ++
-          reverseAll(combineLists(reverseAll(ys), reverseAll(xs)))
-        ).content
-      } &&
-      check {
-        (
-          reverseAll(
-            List(y.reverse ++ x.reverse)
-          ) ++
-          reverseAll(
-            appendToAll(reverseAll(ys), x.reverse)
-          ) ++
-          reverseAll(
-            reverseAll(appendToAll(xs, y))
-          ) ++
-          reverseAll(combineLists(reverseAll(ys), reverseAll(xs)))
-        ).content ==
-        (
-          reverseAll(
-            List(y.reverse ++ x.reverse) ++
-            appendToAll(reverseAll(ys), x.reverse) ++
-            reverseAll(appendToAll(xs, y)) ++
-            combineLists(reverseAll(ys), reverseAll(xs))
-          )
-        ).content because {
-          reverseAllConcat4(
-            List(y.reverse ++ x.reverse),
-            appendToAll(reverseAll(ys), x.reverse),
-            reverseAll(appendToAll(xs, y)),
-            combineLists(reverseAll(ys), reverseAll(xs))
-          )
-        }
-      }
-    }
-  }.holds
-
-  def doubleReverseCombineListPt3[T](x: List[T], xs: List[List[T]], y: List[T], ys: List[List[T]]): Boolean = {
-    //decreases(xs.size + ys.size)
-    reverseAll(
-      List(y.reverse ++ x.reverse) ++
-      appendToAll(reverseAll(ys), x.reverse) ++
-      reverseAll(appendToAll(xs, y)) ++
-      combineLists(reverseAll(ys), reverseAll(xs))
-    ).content ==
-    (
-      reverseAll(
-        appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-        reverseAll(
-          combineLists(xs, y::ys)
-        )
-      )
-    ).content because {
-      check {
-        (
-          reverseAll(
-            List(y.reverse ++ x.reverse) ++
-            appendToAll(reverseAll(ys), x.reverse) ++
-            reverseAll(appendToAll(xs, y)) ++
-            combineLists(reverseAll(ys), reverseAll(xs))
-          )
-        ).content ==
-        (
-          reverseAll(
-            (List(y.reverse ++ x.reverse) ++
-            appendToAll(reverseAll(ys), x.reverse)) ++
-            ((reverseAll(appendToAll(xs, y))) ++
-            combineLists(reverseAll(ys), reverseAll(xs)))
-          )
-        ).content because {
-          ListSpecs.appendAssoc(
-            List(y.reverse ++ x.reverse) ++ appendToAll(reverseAll(ys), x.reverse),
-            reverseAll(appendToAll(xs, y)),
-            combineLists(reverseAll(ys), reverseAll(xs))
-          )
-        }
-      } &&
-      check {
-        (
-          reverseAll(
-            (List(y.reverse ++ x.reverse) ++
-            appendToAll(reverseAll(ys), x.reverse)) ++
-            ((reverseAll(appendToAll(xs, y))) ++
-            combineLists(reverseAll(ys), reverseAll(xs)))
-          )
-        ).content ==
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            ((reverseAll(appendToAll(xs, y))) ++
-            combineLists(reverseAll(ys), reverseAll(xs)))
-          )
-        ).content
-      } &&
-      check {
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            ((reverseAll(appendToAll(xs, y))) ++
-            combineLists(reverseAll(ys), reverseAll(xs)))
-          )
-        ).content ==
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            ((reverseAll(appendToAll(xs, y))) ++
-            reverseAll(combineLists(reverseAll(reverseAll(xs)), reverseAll(reverseAll(ys)))))
-          )
-        ).content because {
-          true//doubleReverseCombineList(reverseAll(ys),reverseAll(xs))
-        }
-      } &&
-      check {
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            ((reverseAll(appendToAll(xs, y))) ++
-            reverseAll(combineLists(reverseAll(reverseAll(xs)), reverseAll(reverseAll(ys)))))
-          )
-        ).content ==
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            (
-              reverseAll(appendToAll(xs, y)) ++
-              reverseAll(combineLists(xs, ys))
-            )
-          )
-        ).content because {
-          doubleReverseAll(xs) && doubleReverseAll(ys)
-        }
-      } &&
-      check {
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            (
-              reverseAll(appendToAll(xs, y)) ++
-              reverseAll(combineLists(xs, ys))
-            )
-          )
-        ).content ==
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            reverseAll(
-              appendToAll(xs, y) ++
-              combineLists(xs, ys)
-            )
-          )
-        ).content because {
-          reverseAllConcat(appendToAll(xs, y), combineLists(xs, ys))
-        }
-      } &&
-      check {
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            reverseAll(
-              appendToAll(xs, y) ++
-              combineLists(xs, ys)
-            )
-          )
-        ).content ==
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            reverseAll(
-              combineLists(xs, y::ys)
-            )
-          )
-        ).content
-      }
-    }
-  }.holds
-
-  def doubleReverseCombineListPt4[T](x: List[T], xs: List[List[T]], y: List[T], ys: List[List[T]]): Boolean = {
-    decreases(xs.size + ys.size)
-    (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++ reverseAll(combineLists(xs, y::ys)))).content ==
-    (reverseAll(combineLists(reverseAll(y::ys), reverseAll(x::xs)))).content
-    because {
-      check {
-        (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++ reverseAll(combineLists(xs, y::ys)))).content ==
-        (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++ reverseAll(reverseAll(combineLists(reverseAll(y::ys), reverseAll(xs)))))).content because {
-              //doubleReverseCombineListHelper1(appendToAll(y.reverse :: reverseAll(ys), x.reverse), xs, y::ys)
-              check {
-                (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++ reverseAll(combineLists(xs, y::ys)))).content ==
-                (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse)) ++ reverseAll(reverseAll(combineLists(xs, y::ys)))).content because {
-                     reverseAllConcat(appendToAll(y.reverse :: reverseAll(ys), x.reverse), reverseAll(combineLists(xs, y::ys)))
-                   }
-                 } &&
-              check {
-                (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse)) ++ reverseAll(reverseAll(combineLists(xs, y::ys)))).content ==
-                (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse)) ++ reverseAll(reverseAll(reverseAll(combineLists(reverseAll(y::ys), reverseAll(xs)))))).content
-                because {
-                  doubleReverseCombineList(xs, y::ys)
-                }
-              } &&
-              check {
-                (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse)) ++ reverseAll(reverseAll(reverseAll(combineLists(reverseAll(y::ys), reverseAll(xs)))))).content ==
-                (reverseAll(appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++ reverseAll(reverseAll(combineLists(reverseAll(y::ys), reverseAll(xs)))))).content
-                because {
-                    reverseAllConcat(appendToAll(y.reverse :: reverseAll(ys), x.reverse), reverseAll(reverseAll(combineLists(reverseAll(y::ys), reverseAll(xs)))))
-                }
-              }
-            }
-      } &&
-      check {
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            reverseAll(
-              reverseAll(combineLists(reverseAll(y::ys), reverseAll(xs)))
-            )
-          )
-        ).content ==
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            combineLists(reverseAll(y::ys), reverseAll(xs))
-          )
-        ).content because {
-          doubleReverseAll(combineLists(reverseAll(y::ys), reverseAll(xs)))
-        }
-      } &&
-      check {
-        (
-          reverseAll(
-            appendToAll(y.reverse :: reverseAll(ys), x.reverse) ++
-            combineLists(reverseAll(y::ys), reverseAll(xs))
-          )
-        ).content  ==
-        (
-          reverseAll(
-            appendToAll(reverseAll(y::ys), x.reverse) ++
-            combineLists(reverseAll(y::ys), reverseAll(xs))
-          )
-        ).content
-      } &&
-      check {
-        (
-          reverseAll(
-            appendToAll(reverseAll(y::ys), x.reverse) ++
-            combineLists(reverseAll(y::ys), reverseAll(xs))
-          )
-        ).content  ==
-        (
-          reverseAll(
-            combineLists(reverseAll(y::ys), x.reverse :: reverseAll(xs))
-          )
-        ).content
-      } &&
-      check {
-        (
-          reverseAll(
-            combineLists(reverseAll(y::ys), x.reverse :: reverseAll(xs))
-          )
-        ).content  ==
-        (reverseAll(combineLists(reverseAll(y::ys), reverseAll(x::xs)))).content
-      }
-    }
-  }.holds
-
-  def doubleReverseCombineListHelper1[T](l: List[List[T]], x: List[List[T]], y: List[List[T]]): Boolean = {
-    decreases(x.size + y.size)
-    (reverseAll(l  ++ reverseAll(combineLists(x, y)))).content ==
-    (reverseAll(l ++ reverseAll(reverseAll(combineLists(reverseAll(y), reverseAll(x)))))).content
-    because {
-      check {
-        (reverseAll(l  ++ reverseAll(combineLists(x, y)))).content ==
-           (reverseAll(l)  ++ reverseAll(reverseAll(combineLists(x, y)))).content
-           because {
-             reverseAllConcat(l, reverseAll(combineLists(x, y)))
-           }
-         } &&
-      check {
-        (reverseAll(l)  ++ reverseAll(reverseAll(combineLists(x, y)))).content == (reverseAll(l) ++ reverseAll(reverseAll(reverseAll(combineLists(reverseAll(y), reverseAll(x)))))).content
-        because {
-          doubleReverseCombineList(x, y)
-        }
-      } &&
-      check {
-        (reverseAll(l) ++ reverseAll(reverseAll(reverseAll(combineLists(reverseAll(y), reverseAll(x)))))).content ==
-          (reverseAll(l ++ reverseAll(reverseAll(combineLists(reverseAll(y), reverseAll(x)))))).content because {
-            reverseAllConcat(l, reverseAll(reverseAll(combineLists(reverseAll(y), reverseAll(x)))))
-          }
-        }
-    }
-  }.holds
-
-  def doubleReverseAppendConsLemma[T](x: List[T], y: List[T], l: List[List[T]]):Boolean = {
-    (x ++ y) :: l == reverseAll(List(y.reverse ++ x.reverse)) ++ reverseAll(reverseAll(l)) because {
-      (x ++ y) :: l                                             ==| doubleReverseAll((x ++ y) :: l) |
-      reverseAll(reverseAll((x ++ y) :: l))                     ==| trivial                         |
-      reverseAll((x ++ y).reverse :: reverseAll(l))             ==| ListSpecs.reverseAppend(x,y)    |
-      reverseAll((y.reverse ++ x.reverse) :: reverseAll(l))     ==| trivial                         |
-      reverseAll(List(y.reverse ++ x.reverse) ++ reverseAll(l)) ==| trivial                         |
-      reverseAll(List(y.reverse ++ x.reverse)) ++ reverseAll(reverseAll(l))
-    }.qed
   }.holds
 
   def reverseAllConcat[T](l1: List[List[T]], l2: List[List[T]]): Boolean = {
@@ -616,21 +173,195 @@ object ListOfListsSpecs {
     }.qed
   }
 
+  def explode[T](x: List[T], xs: List[List[T]], y: List[T], ys: List[List[T]]): Boolean = {
+    decreases(ys.size)
+    combineLists(x::xs, y::ys).content == (List(x ++ y) ++ appendToAll(xs,y) ++ prependToAll(x,ys) ++ combineLists(xs, ys)).content because {
+        check {combineLists(x::xs, y::ys).content == (appendToAll(x::xs, y) ++ combineLists(x::xs, ys)).content} &&
+        check {(appendToAll(x::xs, y) ++ combineLists(x::xs, ys)).content == (appendToAll(x::xs, y) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content because {combineListDistributiveLeft(x,xs,ys)}} &&
+        check {(appendToAll(x::xs, y) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content == ( ((x++y) :: appendToAll(xs, y)) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content}&&
+        check {(((x ++ y) :: appendToAll(xs, y)) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content == ((List(x ++ y) ++ appendToAll(xs, y)) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content} &&
+        check {((List(x ++ y) ++ appendToAll(xs, y)) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content == (((List(x ++ y) ++ appendToAll(xs, y)) ++ prependToAll(x, ys)) ++ combineLists(xs, ys)).content because {ListSpecs.appendAssoc(List(x ++ y) ++ appendToAll(xs, y), prependToAll(x, ys), combineLists(xs, ys))}}
+    }
+  }.holds
+
+  def doubleReverseCombineList[T](l1: List[List[T]], l2: List[List[T]]): Boolean = {
+    decreases(l2.size)
+    combineLists(l1,l2).content == reverseAll(combineLists(reverseAll(l2), reverseAll(l1))).content because {
+      l1 match {
+        case Nil() => check {combineLists(Nil[List[T]](), l2).content == reverseAll(combineLists(reverseAll(l2), reverseAll(l1))).content}
+        case x :: xs => l2 match {
+          case Nil() => check {  combineLists(x :: xs,Nil[List[T]]()).content == reverseAll(combineLists(reverseAll(Nil[List[T]]()), reverseAll(x :: xs))).content}
+          case y :: ys => {
+            check {
+              combineLists(x::xs, y::ys).content == (List(x ++ y) ++ appendToAll(xs,y) ++ prependToAll(x,ys) ++ combineLists(xs, ys)).content
+              because {
+                explode(x,xs,y,ys)
+              }
+            } &&
+            check {
+              (List(x ++ y) ++ appendToAll(xs,y) ++ prependToAll(x,ys) ++ combineLists(xs, ys)).content ==
+              reverseAll(reverseAll((List(x ++ y) ++ appendToAll(xs,y) ++ prependToAll(x,ys) ++ combineLists(xs, ys)))).content
+              because {
+                doubleReverseAll((List(x ++ y) ++ appendToAll(xs,y) ++ prependToAll(x,ys) ++ combineLists(xs, ys)))
+              }
+            } &&
+            check {
+              reverseAll(reverseAll((List(x ++ y) ++ appendToAll(xs,y) ++ prependToAll(x,ys) ++ combineLists(xs, ys)))).content ==
+              reverseAll(
+                reverseAll(List(x ++ y)) ++
+                reverseAll(appendToAll(xs,y)) ++
+                reverseAll(prependToAll(x,ys)) ++
+                reverseAll(combineLists(xs, ys))
+              ).content
+              because {
+                reverseAllConcat4(List(x ++ y), appendToAll(xs,y), prependToAll(x,ys), combineLists(xs, ys))
+              }
+            } &&
+            check {
+              reverseAll(
+                reverseAll(List(x ++ y)) ++
+                reverseAll(appendToAll(xs,y)) ++
+                reverseAll(prependToAll(x,ys)) ++
+                reverseAll(combineLists(xs, ys))
+              ).content ==
+              reverseAll(
+                reverseAll(List(x ++ y)) ++
+                reverseAll(prependToAll(x,ys)) ++
+                reverseAll(appendToAll(xs,y)) ++
+                reverseAll(combineLists(xs, ys))
+              ).content because {
+                reverseAllChangeOrder4(
+                  reverseAll(List(x ++ y)),
+                  reverseAll(appendToAll(xs,y)),
+                  reverseAll(prependToAll(x,ys)),
+                  reverseAll(combineLists(xs, ys))
+                )
+              }
+            } &&
+            check {
+              reverseAll(
+                reverseAll(List(x ++ y)) ++
+                reverseAll(prependToAll(x,ys)) ++
+                reverseAll(appendToAll(xs,y)) ++
+                reverseAll(combineLists(xs, ys))
+              ).content ==
+              reverseAll(
+                List(y.reverse ++ x.reverse) ++
+                reverseAll(prependToAll(x,ys)) ++
+                reverseAll(appendToAll(xs,y)) ++
+                reverseAll(combineLists(xs, ys))
+              ).content
+              because {
+                ListSpecs.reverseAppend(x,y)
+              }
+            } &&
+            check {
+              reverseAll(
+                List(y.reverse ++ x.reverse) ++
+                reverseAll(prependToAll(x,ys)) ++
+                reverseAll(appendToAll(xs,y)) ++
+                reverseAll(combineLists(xs, ys))
+              ).content ==
+              reverseAll(
+                List(y.reverse ++ x.reverse) ++
+                appendToAll(reverseAll(ys),x.reverse) ++
+                reverseAll(appendToAll(xs,y)) ++
+                reverseAll(combineLists(xs, ys))
+              ).content
+              because {
+                reversePrependToAllLemma(x,ys)
+              }
+            } && check {
+              reverseAll(
+                List(y.reverse ++ x.reverse) ++
+                appendToAll(reverseAll(ys),x.reverse) ++
+                reverseAll(appendToAll(xs,y)) ++
+                reverseAll(combineLists(xs, ys))
+              ).content ==
+              reverseAll(
+                List(y.reverse ++ x.reverse) ++
+                appendToAll(reverseAll(ys),x.reverse) ++
+                prependToAll(y.reverse,reverseAll(xs)) ++
+                reverseAll(combineLists(xs, ys))
+              ).content
+              because {
+                reverseAppendToAllLemma(xs, y)
+              }
+            } && check {
+              reverseAll(
+                List(y.reverse ++ x.reverse) ++
+                appendToAll(reverseAll(ys),x.reverse) ++
+                prependToAll(y.reverse,reverseAll(xs)) ++
+                reverseAll(combineLists(xs, ys))
+              ).content ==
+              reverseAll(
+                List(y.reverse ++ x.reverse) ++
+                appendToAll(reverseAll(ys),x.reverse) ++
+                prependToAll(y.reverse,reverseAll(xs)) ++
+                combineLists(reverseAll(ys), reverseAll(xs))
+              ).content
+              because {
+                doubleReverseCombineList(xs, ys)
+              }
+            } && check {
+              reverseAll(
+                List(y.reverse ++ x.reverse) ++
+                appendToAll(reverseAll(ys),x.reverse) ++
+                prependToAll(y.reverse,reverseAll(xs)) ++
+                combineLists(reverseAll(xs), reverseAll(ys))
+              ).content ==
+              reverseAll(combineLists(y.reverse :: reverseAll(ys), x.reverse :: reverseAll(xs))).content
+              because {explode(y.reverse, reverseAll(ys), x.reverse, reverseAll(xs))}
+            } && check {
+              reverseAll(combineLists(y.reverse :: reverseAll(ys), x.reverse :: reverseAll(xs))).content ==
+              reverseAll(combineLists(reverseAll(y :: ys), reverseAll(x :: xs))).content
+            }
+          }
+        }
+      }
+    }
+  }.holds
+
+  def reverseAllChangeOrder[T](l1: List[List[T]], l2: List[List[T]]): Boolean = {
+    reverseAll(l1 ++ l2).content == reverseAll(l2 ++ l1).content because {
+      reverseAll(l1 ++ l2).content               ==| reverseAllConcat(l1,l2)  |
+      (reverseAll(l1) ++ reverseAll(l2)).content ==| trivial                  |
+      (reverseAll(l2) ++ reverseAll(l1)).content ==| reverseAllConcat(l2,l1)  |
+      reverseAll(l2 ++ l1).content
+    }.qed
+  }.holds
+
+  def reverseAllChangeOrder4[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]], l4: List[List[T]]): Boolean = {
+    reverseAll(l1 ++ l2 ++ l3 ++ l4).content == reverseAll(l1 ++ l3 ++ l2 ++ l4).content because {
+       reverseAll(l1 ++ l2 ++ l3 ++ l4).content                           ==| ListSpecs.appendAssoc(l1, l2, l3) |
+       reverseAll(l1 ++ (l2 ++ l3) ++ l4).content                         ==| reverseAllConcat3(l1, l2++l3, l4) |
+       (reverseAll(l1) ++ reverseAll(l2 ++ l3) ++ reverseAll(l4)).content ==| reverseAllChangeOrder(l2,l3)      |
+       (reverseAll(l1) ++ reverseAll(l2 ++ l3) ++ reverseAll(l4)).content ==| reverseAllConcat3(l1, l3++l2, l4) |
+       reverseAll(l1 ++ (l3 ++ l2) ++ l4).content                         ==| ListSpecs.appendAssoc(l1, l3, l2) |
+       reverseAll(l1 ++ l3 ++ l2 ++ l4).content
+    }.qed
+  }.holds
 
   def combineListDistributiveRight[T](l1: List[List[T]], w: List[T], l2: List[List[T]]): Boolean = {
     combineLists(l1, w::l2).content == (appendToAll(l1, w) ++ combineLists(l1, l2)).content
   }.holds
 
   def combineListDistributiveLeft[T](w: List[T], l1: List[List[T]], l2: List[List[T]]): Boolean = {
+    decreases(l2.size)
     combineLists(w::l1, l2).content == (prependToAll(w, l2) ++ combineLists(l1, l2)).content because {
-      combineLists((w ::  l1), l2).content                                                                                      ==| doubleReverseCombineList((w::l1),l2) |
-      reverseAll(combineLists(reverseAll(l2), reverseAll((w ::  l1)))).content                                                  ==| trivial |
-      reverseAll(combineLists(reverseAll(l2), w.reverse :: reverseAll(l1))).content                                             ==| trivial |
-      (reverseAll(appendToAll(reverseAll(l2), w.reverse) ++ combineLists(reverseAll(l2), reverseAll(l1)))).content              ==| reverseAllConcat(appendToAll(reverseAll(l2), w.reverse), combineLists(reverseAll(l2), reverseAll(l1))) |
-      (reverseAll(appendToAll(reverseAll(l2), w.reverse)) ++ reverseAll(combineLists(reverseAll(l2), reverseAll(l1)))).content  ==| trivial |
-      (prependToAll(w, l2) ++ reverseAll(combineLists(reverseAll(l2), reverseAll(l1)))).content                                 ==| doubleReverseCombineList(l1, l2) |
-      (prependToAll(w, l2) ++ combineLists(l1, l2)).content
-    }.qed
+      l2 match {
+        case Nil() => true
+        case _ => {
+          combineLists((w ::  l1), l2).content                                                                                      ==| doubleReverseCombineList((w::l1),l2) |
+          reverseAll(combineLists(reverseAll(l2), reverseAll((w ::  l1)))).content                                                  ==| trivial |
+          reverseAll(combineLists(reverseAll(l2), w.reverse :: reverseAll(l1))).content                                             ==| trivial |
+          (reverseAll(appendToAll(reverseAll(l2), w.reverse) ++ combineLists(reverseAll(l2), reverseAll(l1)))).content              ==| reverseAllConcat(appendToAll(reverseAll(l2), w.reverse), combineLists(reverseAll(l2), reverseAll(l1))) |
+          (reverseAll(appendToAll(reverseAll(l2), w.reverse)) ++ reverseAll(combineLists(reverseAll(l2), reverseAll(l1)))).content  ==| prependToAllLemma(w,l2) |
+          (prependToAll(w, l2) ++ reverseAll(combineLists(reverseAll(l2), reverseAll(l1)))).content                                 ==| doubleReverseCombineList(l1, l2) |
+          (prependToAll(w, l2) ++ combineLists(l1, l2)).content
+        }.qed
+      }
+    }
   }.holds
 
 }
