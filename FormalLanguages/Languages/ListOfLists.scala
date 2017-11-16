@@ -274,8 +274,8 @@ object ListOfListsSpecs {
 
   //TODO recreate with a simple example
   def contentTraversesAA[T](l1: List[List[T]], l2: List[List[T]], suffix: List[T]): Boolean = {
-    decreases(l1.size)
     require(l1.content == l2.content)
+    decreases(l1.size)
     appendToAll(l1, suffix).content == appendToAll(l2,suffix).content because {
       l1 match {
         case Nil() => true
@@ -392,23 +392,6 @@ object ListOfListsSpecs {
           (prependToAll(x,combineLists(l2,l3)) ++ combineLists(xs, combineLists(l2,l3))).content ==| combineListDistributiveLeft(x,xs,combineLists(l2,l3)) |
           combineLists(x::xs, combineLists(l2,l3)).content
         }.qed
-      }
-    }
-  }.holds
-
-  def combineListAssoc2[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
-    combineLists(combineLists(l1,l2),l3).content == combineLists(l1, combineLists(l2,l3)).content because {
-      l1 match {
-        case Nil() => check {combineLists(combineLists(Nil[List[T]](),l2),l3).content == combineLists(Nil[List[T]](), combineLists(l2,l3)).content}
-        case x :: xs => {
-          check {combineLists(combineLists(x::xs,l2),l3).content == combineLists(prependToAll(x,l2) ++ combineLists(xs,l2),l3).content because {
-            combineListDistributiveLeft(x,xs,l2) && contentTraverses(combineLists(x::xs,l2),prependToAll(x,l2) ++ combineLists(xs,l2) , l3)}} &&
-          check {combineLists(prependToAll(x,l2) ++ combineLists(xs,l2),l3).content == (combineLists(prependToAll(x,l2),l3) ++ combineLists(combineLists(xs,l2),l3)).content because {
-            combineListsDistributiveAppend(prependToAll(x,l2), combineLists(xs,l2) ,l3)}} &&
-          check {(combineLists(prependToAll(x,l2),l3) ++ combineLists(combineLists(xs,l2),l3)).content == (combineLists(prependToAll(x,l2),l3) ++ combineLists(xs, combineLists(l2,l3))).content because {combineListAssoc(xs,l2,l3)}} &&
-          check {(combineLists(prependToAll(x,l2),l3) ++ combineLists(xs, combineLists(l2,l3))).content == (prependToAll(x,combineLists(l2,l3)) ++ combineLists(xs, combineLists(l2,l3))).content because {replaceCombinePrepend(x,l2,l3)}} &&
-          check {(prependToAll(x,combineLists(l2,l3)) ++ combineLists(xs, combineLists(l2,l3))).content == combineLists(x::xs, combineLists(l2,l3)).content because combineListDistributiveLeft(x,xs,combineLists(l2,l3)) }
-        }
       }
     }
   }.holds
