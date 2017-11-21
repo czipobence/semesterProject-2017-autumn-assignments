@@ -11,14 +11,6 @@ case class Lang[T](list: List[List[T]]) {
 
   def combine(that: Lang[T]): Lang[T] = {
     Lang[T](combineLists(this.list, that.list))
-  }/*.ensuring {res =>
-    forall ((l1: List[T], l2: List[T]) => if (this.contains(l1)) if (that.contains(l2)) res.contains(l1 ++ l2) else true else true ) because {combineListsContentLemma2(this.list, that.list)}
-  }*/
-
-  def combineWithForall(that: Lang[T]): Lang[T] = {
-    Lang[T](combineLists(this.list, that.list))
-  }.ensuring {res =>
-    this.list.forall(l1 => that.list.forall(l2 => res.contains(l1 ++ l2)))
   }
 
   def ::(t: List[T]): Lang[T] = {
@@ -97,7 +89,9 @@ object LangSpecs {
   }.holds
 
   def associativity[T](l1: Lang[T], l2: Lang[T], l3:Lang[T]): Boolean = {
-    (l1 combine (l2 combine l3)) sameAs ((l1 combine l2) combine l3)
+    (l1 combine (l2 combine l3)) sameAs ((l1 combine l2) combine l3) because {
+      combineListAssoc(l1.list, l2.list, l3.list)
+    }
   }.holds
 
   def combineDistributiveRight[T](l1: Lang[T], w: List[T], l2: Lang[T]): Boolean = {
