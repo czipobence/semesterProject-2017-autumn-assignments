@@ -3,6 +3,7 @@ import stainless.collection._
 import stainless.proof._
 import stainless.annotation._
 
+/* Useful and not-so-useful theorems about lists that are not in ListSpecs*/
 object ListSpecsExt {
 
   /*
@@ -16,6 +17,30 @@ object ListSpecsExt {
       l1 ++ (x :: l2)
     }.qed
   }.holds
+
+  //If a list does not contain an item, removing this item yields the same list
+  def notContainsRemove[T](l: List[T], x: T): Boolean = {
+    require(!l.contains(x))
+    l == l-x because {
+      l match {
+        case Nil() => true
+        case y::ys => {
+          y::ys     ==| notContainsRemove(ys,x) |
+          y::(ys-x) ==| !(y==x)                 |
+          (y::ys)-x
+        }.qed
+      }
+    }
+  }.holds
+
+  // If list does not contain an item, and we prepend an item to it,
+  // and later remove, we get back the original list
+  def prependAndRemoveNotContaining[T](x: T, l: List[T]): Boolean = {
+    require(!l.contains(x))
+    l == (x::l)-x
+  }.holds because {
+    notContainsRemove(l,x)
+  }
 }
 
 import ListSpecsExt._
@@ -54,44 +79,8 @@ object ListOfLists {
 
 import ListOfLists._
 
-object ListOfListsSpecs {
-
-  def prependToAllLemma[T](prefix: List[T], l: List[List[T]]): Boolean = {
-    prependToAll(prefix,l) == reverseAll(appendToAll(reverseAll(l) , prefix.reverse)) because {
-      l match {
-        case Nil() => true
-        case x :: xs => {
-          prependToAll(prefix,x::xs)                                                                                      ==| trivial |
-          (prefix ++ x) :: prependToAll(prefix,xs)                                                                        ==| doubleReverseAll((prefix ++ x) :: prependToAll(prefix,xs)) |
-          reverseAll(reverseAll((prefix ++ x) :: prependToAll(prefix,xs)))                                                ==| trivial |
-          reverseAll((prefix ++ x).reverse :: reverseAll(prependToAll(prefix,xs)))                                        ==| ListSpecs.reverseAppend(prefix,x) |
-          reverseAll((x.reverse ++ prefix.reverse) :: reverseAll(prependToAll(prefix,xs)))                                ==| prependToAllLemma(prefix,xs) |
-          reverseAll((x.reverse ++ prefix.reverse) :: reverseAll(reverseAll(appendToAll(reverseAll(xs),prefix.reverse)))) ==| doubleReverseAll(appendToAll(reverseAll(xs),prefix.reverse)) |
-          reverseAll((x.reverse ++ prefix.reverse) :: appendToAll(reverseAll(xs),prefix.reverse))                         ==| trivial |
-          reverseAll(appendToAll(x.reverse :: reverseAll(xs), prefix.reverse))                                            ==| trivial |
-          reverseAll(appendToAll(reverseAll(x::xs), prefix.reverse))
-        }.qed
-      }
-    }
-  }.holds
-
-  def reversePrependToAllLemma[T](prefix: List[T], l: List[List[T]]): Boolean = {
-    reverseAll(prependToAll(prefix,l)) == appendToAll(reverseAll(l), prefix.reverse) because {
-      reverseAll(prependToAll(prefix,l))                                  ==| prependToAllLemma(prefix, l) |
-      reverseAll(reverseAll(appendToAll(reverseAll(l), prefix.reverse)))  ==| doubleReverseAll(appendToAll(reverseAll(l), prefix.reverse)) |
-      appendToAll(reverseAll(l), prefix.reverse)
-    }.qed
-  }.holds
-
-  def reverseAppendToAllLemma[T](l: List[List[T]], suffix: List[T]): Boolean = {
-    reverseAll(appendToAll(l,suffix)) == prependToAll(suffix.reverse, reverseAll(l)) because {
-      reverseAll(appendToAll(l,suffix))                                         ==| doubleReverseAll(l)                               |
-      reverseAll(appendToAll(reverseAll(reverseAll(l)),suffix))                 ==| ListSpecs.reverseReverse(suffix)                  |
-      reverseAll(appendToAll(reverseAll(reverseAll(l)),suffix.reverse.reverse)) ==| prependToAllLemma(suffix.reverse, reverseAll(l))  |
-      prependToAll(suffix.reverse, reverseAll(l))
-    }.qed
-  }.holds
-
+//Theorems and lemmas about the reverse all operation
+object ReverseAllSpecs {
   //reverseAll for SingleList, actually trivial
   def reverseAllSingleItem[T](list: List[T]): Boolean = {
     reverseAll(List(list)) == List(list.reverse)
@@ -111,6 +100,8 @@ object ListOfListsSpecs {
     }
   }.holds
 
+  //Actually, it can be said for every f: List[List[T]] --> List[List[T]] that
+  // f(a ++ b) == f(a) ++ f(b)
   def reverseAllConcat[T](l1: List[List[T]], l2: List[List[T]]): Boolean = {
     reverseAll(l1 ++ l2) == reverseAll(l1) ++ reverseAll(l2) because {
       l2 match {
@@ -145,46 +136,8 @@ object ListOfListsSpecs {
     }
   }.holds
 
-  def prependToEmptyList[T](prefix: List[T]): Boolean = {
-    prependToAll(prefix, List[List[T]](Nil[T]())) == List(prefix) because {
-      prependToAll(prefix, List[List[T]](Nil[T]()))                                                         ==| prependToAllLemma(prefix, List[List[T]](Nil[T]())) |
-      reverseAll(appendToAll(reverseAll(List[List[T]](Nil[T]())), prefix.reverse))                          ==| trivial |
-      reverseAll(appendToAll(List[List[T]](Nil[T]()),prefix.reverse))                                       ==| trivial |
-      reverseAll(List(prefix.reverse))                                                                      ==| trivial |
-      List(prefix.reverse.reverse)                                                                          ==| ListSpecs.reverseReverse(prefix) |
-      List(prefix)
-    }.qed
-  }.holds
-
-  def explode[T](x: List[T], xs: List[List[T]], y: List[T], ys: List[List[T]]): Boolean = {
-    combineLists(x::xs, y::ys).content == (List(x ++ y) ++ appendToAll(xs,y) ++ prependToAll(x,ys) ++ combineLists(xs, ys)).content because {
-        combineLists(x::xs, y::ys).content                                                              ==| trivial                                                                                               |
-        (appendToAll(x::xs, y) ++ combineLists(x::xs, ys)).content                                      ==| combineListDistributiveLeft(x,xs,ys)                                                                  |
-        (appendToAll(x::xs, y) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content                ==| (appendToAll(x::xs, y) == ((x ++ y) :: appendToAll(xs, y)))                                           |
-        (((x ++ y) :: appendToAll(xs, y)) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content     ==| ((x ++ y) :: appendToAll(xs, y) == (List(x ++ y) ++ appendToAll(xs, y)))                              |
-        ((List(x ++ y) ++ appendToAll(xs, y)) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content ==| ListSpecs.appendAssoc(List(x ++ y) ++ appendToAll(xs, y), prependToAll(x, ys), combineLists(xs, ys))  |
-        (((List(x ++ y) ++ appendToAll(xs, y)) ++ prependToAll(x, ys)) ++ combineLists(xs, ys)).content
-    }.qed
-  }.holds
-
-  def doubleReverseCombineList[T](l1: List[List[T]], l2: List[List[T]]): Boolean = {
-    decreases(l1.size)
-    combineLists(l1,l2).content == reverseAll(combineLists(reverseAll(l2), reverseAll(l1))).content because {
-      l1 match {
-        case Nil() => check {combineLists(Nil[List[T]](), l2).content == reverseAll(combineLists(reverseAll(l2), reverseAll(l1))).content}
-        case x :: xs => {
-          combineLists(x :: xs,l2).content                                                                                        ==| combineListDistributiveLeft(x,xs,l2) |
-          (prependToAll(x,l2) ++ combineLists(xs, l2)).content                                                                    ==| prependToAllLemma(x,l2) |
-          (reverseAll(appendToAll(reverseAll(l2),x.reverse)) ++ combineLists(xs, l2)).content                                     ==| doubleReverseCombineList(xs,l2) |
-          (reverseAll(appendToAll(reverseAll(l2),x.reverse)) ++ reverseAll(combineLists(reverseAll(l2),reverseAll(xs)))).content  ==| reverseAllConcat(appendToAll(reverseAll(l2),x.reverse),combineLists(reverseAll(l2),reverseAll(xs))) |
-          reverseAll(appendToAll(reverseAll(l2),x.reverse) ++ combineLists(reverseAll(l2),reverseAll(xs))).content                ==| trivial |
-          reverseAll(combineLists(reverseAll(l2),x.reverse :: reverseAll(xs))).content                                            ==| trivial |
-          reverseAll(combineLists(reverseAll(l2),reverseAll(x::xs))).content
-        }.qed
-      }
-    }
-  }.holds
-
+  //It can be more generally said that for every f: List[List[T]] --> List[List[T]]
+  // we have f(a ++ b) == f(b ++ a) if f(a++b) == f(a) ++ f(b)
   def reverseAllChangeOrder[T](l1: List[List[T]], l2: List[List[T]]): Boolean = {
     reverseAll(l1 ++ l2).content == reverseAll(l2 ++ l1).content because {
       reverseAll(l1 ++ l2).content               ==| reverseAllConcat(l1,l2)  |
@@ -194,6 +147,7 @@ object ListOfListsSpecs {
     }.qed
   }.holds
 
+  //The 4-way version of the theorem above
   def reverseAllChangeOrder4[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]], l4: List[List[T]]): Boolean = {
     reverseAll(l1 ++ l2 ++ l3 ++ l4).content == reverseAll(l1 ++ l3 ++ l2 ++ l4).content because {
        reverseAll(l1 ++ l2 ++ l3 ++ l4).content                           ==| ListSpecs.appendAssoc(l1, l2, l3) |
@@ -204,133 +158,62 @@ object ListOfListsSpecs {
        reverseAll(l1 ++ l3 ++ l2 ++ l4).content
     }.qed
   }.holds
+}
 
-  def appendToAllContains[T](l: List[List[T]], s: List[T], x: List[T]): Boolean = {
-    require(l.contains(x))
-    appendToAll(l,s).contains(x++s) because {
+import ReverseAllSpecs._
+
+//Theorems about the appendToAll and prependToAll operations
+object AppendPrependSpecs {
+  def convertPaToAa[T](prefix: List[T], l: List[List[T]]): Boolean = {
+    prependToAll(prefix,l) == reverseAll(appendToAll(reverseAll(l) , prefix.reverse)) because {
       l match {
-        case Nil() => true
-        case y::ys if (x == y) => true
-        case y::ys => appendToAllContains(ys,s,x) because ys.contains(x)
-      }
-    }
-  }.holds
-
-  def notContainsRemove[T](l: List[T], x: T): Boolean = {
-    require(!l.contains(x))
-    l == l-x because {
-      l match {
-        case Nil() => true
-        case y::ys => {
-          check {y::ys == y::(ys-x) because {notContainsRemove(ys,x)}} &&
-          check {y::(ys-x) == (y::ys)-x because {!(y==x)}}
-        }
-      }
-    }
-  }.holds
-
-  def prependAndRemoveNotContaining[T](x: T, l: List[T]): Boolean = {
-    require(!l.contains(x))
-    l == (x::l)-x because {
-      check {(x::l)-x == l-x} &&
-      check {l-x == l because {notContainsRemove(l,x)}}
-    }
-  }.holds
-
-  //40-45s
-  def appendToAllRemoveAndAdd[T](l:List[List[T]], s: List[T], x: List[T]): Boolean = {
-    require(l.contains(x))
-    ((x++s) :: appendToAll(l-x,s)).content == appendToAll(l,s).content because {
-      l match {
-        case Nil() => true
-        case y::ys if ((x == y) && (ys contains x)) => {
-          check {appendToAll(x::ys,s).content == ((x++s) ::appendToAll(ys,s)).content} &&
-          check {((x++s) ::appendToAll(ys,s)).content == (Set((x++s)) ++ appendToAll(ys,s).content)} &&
-          check {(Set(x++s) ++ appendToAll(ys,s).content) == (Set(x++s) ++ ((x++s) :: appendToAll(ys-x,s)).content) because {appendToAllRemoveAndAdd(ys,s,x)}} &&
-          check {(Set(x++s) ++ ((x++s) :: appendToAll(ys-x,s)).content) == ((x++s) :: ((x++s)::appendToAll(ys-x,s))).content} &&
-          check {((x++s) :: ((x++s)::appendToAll(ys-x,s))).content == ((x++s)::appendToAll(ys-x,s)).content} &&
-          check {((x++s)::appendToAll(ys-x,s)).content == ((x++s)::appendToAll((x::ys)-x,s)).content}
-        }
-        case y::ys if (x==y) => {
-          check {appendToAll(x::ys,s).content == ((x++s) ::appendToAll(ys,s)).content} &&
-          check {!ys.contains(x)}
-          check {ys == ((x::ys)-x) because {prependAndRemoveNotContaining(x,ys)}} &&
-          check {((x++s) ::appendToAll(ys,s)).content == ((x++s) ::appendToAll((x::ys)-x,s)).content}
-        }
-        case y::ys => {
-          check {appendToAll(y::ys,s).content == ((y++s) :: appendToAll(ys,s)).content} &&
-          check {((y++s) :: appendToAll(ys,s)).content == (Set(y++s) ++appendToAll(ys,s).content)} &&
-          check {(Set(y++s) ++appendToAll(ys,s).content) == (Set(y++s) ++((x++s) :: appendToAll(ys-x,s)).content) because {appendToAllRemoveAndAdd(ys,s,x)}} &&
-          check {(Set(y++s) ++((x++s) :: appendToAll(ys-x,s)).content) == (Set(y++s) ++ Set(x++s) ++ appendToAll(ys-x,s).content)} &&
-          check {(Set(y++s) ++ Set(x++s) ++ appendToAll(ys-x,s).content) == (Set(x++s) ++ (Set(y++s) ++ appendToAll(ys-x,s).content))} &&
-          check {(Set(x++s) ++ (Set(y++s) ++ appendToAll(ys-x,s).content)) == (Set(x++s) ++ ((y++s) :: appendToAll(ys-x,s)).content)} &&
-          check {(Set(x++s) ++ ((y++s) :: appendToAll(ys-x,s)).content) == (Set(x++s) ++ appendToAll(y::(ys-x),s).content)} &&
-          check {(Set(x++s) ++ appendToAll(y::(ys-x),s).content) == (Set(x++s) ++ appendToAll((y::ys)-x,s).content)}
-        }
-      }
-    }
-  }.holds
-
-
-  //TODO recreate with a simple example
-  def contentTraversesAA[T](l1: List[List[T]], l2: List[List[T]], suffix: List[T]): Boolean = {
-    require(l1.content == l2.content)
-    decreases(l1.size)
-    appendToAll(l1, suffix).content == appendToAll(l2,suffix).content because {
-      l1 match {
-        case Nil() => true
-        case x :: xs if xs.contains(x) => {
-          check {xs.content == (x::xs).content} &&
-          check {appendToAll(x::xs, suffix).content == ( (x++suffix) ::appendToAll(xs,suffix)).content} &&
-          check {( (x++suffix) ::appendToAll(xs,suffix)).content == appendToAll(xs,suffix).content because {appendToAllContains(xs,suffix,x)}}
-          check {appendToAll(xs,suffix).content == appendToAll(l2,suffix).content because { (xs.content == l2.content) && contentTraversesAA(xs,l2,suffix)}}
-        }
-        case x :: xs  => {
-          check {appendToAll(x::xs, suffix).content == ((x++suffix) :: appendToAll(xs,suffix)).content} &&
-          check {((x++suffix) :: appendToAll(xs,suffix)).content == Set(x++suffix) ++ appendToAll(xs,suffix).content} &&
-          check {Set(x++suffix) ++ appendToAll(xs,suffix).content ==  Set(x++suffix) ++ appendToAll(l2-x,suffix).content because {contentTraversesAA(xs, l2-x, suffix)}} &&
-          check {Set(x++suffix) ++ appendToAll(l2-x,suffix).content == ((x++suffix) :: appendToAll(l2-x,suffix)).content} &&
-          check {((x++suffix) :: appendToAll(l2-x,suffix)).content == appendToAll(l2,suffix).content because {appendToAllRemoveAndAdd(l2,suffix,x)}}
-        }
-      }
-    }
-  }.holds
-
-  def contentTraverses[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
-    require(l1.content == l2.content)
-    combineLists(l1, l3).content == combineLists(l2, l3).content because {
-      l3 match {
-        case Nil() => check{true}
-        case x::xs => {
-          check {combineLists(l1, x::xs).content == (appendToAll(l1, x) ++ combineLists(l1, xs)).content because {combineListDistributiveRight(l1,x,xs)}} &&
-          check {(appendToAll(l1, x) ++ combineLists(l1, xs)).content == (appendToAll(l1, x).content ++ combineLists(l1, xs).content)} &&
-          check {(appendToAll(l1, x).content ++ combineLists(l1, xs).content) == (appendToAll(l1, x).content ++ combineLists(l2, xs).content) because {contentTraverses(l1,l2,xs)}} &&
-          check {(appendToAll(l1, x).content ++ combineLists(l2, xs).content) == (appendToAll(l2, x).content ++ combineLists(l2, xs).content) because {contentTraversesAA(l1,l2,x)}} &&
-          check {(appendToAll(l2, x).content ++ combineLists(l2, xs).content) == (appendToAll(l2, x) ++ combineLists(l2, xs)).content} &&
-          check {(appendToAll(l2, x) ++ combineLists(l2, xs)).content == (combineLists(l2, x::xs)).content because {combineListDistributiveRight(l2,x,xs)}}
-        }
-      }
-    }
-  }.holds
-
-  //Not that I'd complain but it was 169.5s...
-  def combineListsDistributiveAppend[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
-    decreases(l1.size)
-    combineLists(l1 ++ l2, l3).content == (combineLists(l1,l3) ++ combineLists(l2,l3)).content because {
-      l1 match {
         case Nil() => true
         case x :: xs => {
-          check {combineLists((x::xs) ++ l2, l3).content == combineLists(x:: (xs ++ l2), l3).content} &&
-          check {combineLists(x:: (xs ++ l2), l3).content == (prependToAll(x, l3) ++ combineLists(xs ++ l2,l3)).content because {combineListDistributiveLeft(x,xs++l2,l3)}} &&
-          check {(prependToAll(x, l3) ++ combineLists(xs ++ l2,l3)).content == (prependToAll(x, l3) ++ (combineLists(xs ,l3) ++ combineLists(l2,l3))).content because {combineListsDistributiveAppend(xs,l2,l3)}} &&
-          check {(prependToAll(x, l3) ++ (combineLists(xs ,l3) ++ combineLists(l2,l3))).content == ((prependToAll(x, l3) ++ combineLists(xs ,l3)) ++ combineLists(l2,l3)).content because{ListSpecs.appendAssoc(prependToAll(x, l3), combineLists(xs ,l3), combineLists(l2,l3))}} &&
-          check {((prependToAll(x, l3) ++ combineLists(xs ,l3)) ++ combineLists(l2,l3)).content == (combineLists(x::xs ,l3) ++ combineLists(l2,l3)).content because {combineListDistributiveLeft(x,xs,l3)}}
-        }
+          prependToAll(prefix,x::xs)                                                                                      ==| trivial |
+          (prefix ++ x) :: prependToAll(prefix,xs)                                                                        ==| doubleReverseAll((prefix ++ x) :: prependToAll(prefix,xs)) |
+          reverseAll(reverseAll((prefix ++ x) :: prependToAll(prefix,xs)))                                                ==| trivial |
+          reverseAll((prefix ++ x).reverse :: reverseAll(prependToAll(prefix,xs)))                                        ==| ListSpecs.reverseAppend(prefix,x) |
+          reverseAll((x.reverse ++ prefix.reverse) :: reverseAll(prependToAll(prefix,xs)))                                ==| convertPaToAa(prefix,xs) |
+          reverseAll((x.reverse ++ prefix.reverse) :: reverseAll(reverseAll(appendToAll(reverseAll(xs),prefix.reverse)))) ==| doubleReverseAll(appendToAll(reverseAll(xs),prefix.reverse)) |
+          reverseAll((x.reverse ++ prefix.reverse) :: appendToAll(reverseAll(xs),prefix.reverse))                         ==| trivial |
+          reverseAll(appendToAll(x.reverse :: reverseAll(xs), prefix.reverse))                                            ==| trivial |
+          reverseAll(appendToAll(reverseAll(x::xs), prefix.reverse))
+        }.qed
       }
     }
   }.holds
 
-  def prependToAllDistributive[T](prefix: List[T], l1: List[List[T]], l2: List[List[T]]): Boolean = {
+  def convertReverseAaToPa[T](l: List[List[T]], suffix: List[T]): Boolean = {
+    reverseAll(appendToAll(l,suffix)) == prependToAll(suffix.reverse, reverseAll(l)) because {
+      reverseAll(appendToAll(l,suffix))                                         ==| doubleReverseAll(l)                               |
+      reverseAll(appendToAll(reverseAll(reverseAll(l)),suffix))                 ==| ListSpecs.reverseReverse(suffix)                  |
+      reverseAll(appendToAll(reverseAll(reverseAll(l)),suffix.reverse.reverse)) ==| convertPaToAa(suffix.reverse, reverseAll(l))  |
+      prependToAll(suffix.reverse, reverseAll(l))
+    }.qed
+  }.holds
+
+
+  def convertReversePaToAa[T](prefix: List[T], l: List[List[T]]): Boolean = {
+    reverseAll(prependToAll(prefix,l)) == appendToAll(reverseAll(l), prefix.reverse) because {
+      reverseAll(prependToAll(prefix,l))                                  ==| convertPaToAa(prefix, l) |
+      reverseAll(reverseAll(appendToAll(reverseAll(l), prefix.reverse)))  ==| doubleReverseAll(appendToAll(reverseAll(l), prefix.reverse)) |
+      appendToAll(reverseAll(l), prefix.reverse)
+    }.qed
+  }.holds
+
+  def prependToEmptyList[T](prefix: List[T]): Boolean = {
+    prependToAll(prefix, List[List[T]](Nil[T]())) == List(prefix) because {
+      prependToAll(prefix, List[List[T]](Nil[T]()))                                                         ==| convertPaToAa(prefix, List[List[T]](Nil[T]())) |
+      reverseAll(appendToAll(reverseAll(List[List[T]](Nil[T]())), prefix.reverse))                          ==| trivial |
+      reverseAll(appendToAll(List[List[T]](Nil[T]()),prefix.reverse))                                       ==| trivial |
+      reverseAll(List(prefix.reverse))                                                                      ==| trivial |
+      List(prefix.reverse.reverse)                                                                          ==| ListSpecs.reverseReverse(prefix) |
+      List(prefix)
+    }.qed
+  }.holds
+
+  //prepend to all is distributive over list appending
+  def paDistributiveOverAppend[T](prefix: List[T], l1: List[List[T]], l2: List[List[T]]): Boolean = {
     prependToAll(prefix, l1) ++ prependToAll(prefix, l2) == prependToAll(prefix, l1 ++ l2) because {
       l1 match {
         case Nil() => true
@@ -338,7 +221,7 @@ object ListOfListsSpecs {
           check {(prependToAll(prefix, x::xs) ++ prependToAll(prefix, l2)) == (( (prefix ++ x) :: prependToAll(prefix, xs)) ++ prependToAll(prefix, l2))} &&
           check {(( (prefix ++ x) :: prependToAll(prefix, xs)) ++ prependToAll(prefix, l2)) == (( List(prefix ++ x) ++ prependToAll(prefix, xs)) ++ prependToAll(prefix, l2))} &&
           check {(( List(prefix ++ x) ++ prependToAll(prefix, xs)) ++ prependToAll(prefix, l2)) == (List(prefix ++ x) ++ (prependToAll(prefix, xs) ++ prependToAll(prefix, l2)))} &&
-          check {(List(prefix ++ x) ++ (prependToAll(prefix, xs) ++ prependToAll(prefix, l2))) == (List(prefix ++ x) ++ prependToAll(prefix, xs++l2)) because {prependToAllDistributive(prefix, xs, l2)}} &&
+          check {(List(prefix ++ x) ++ (prependToAll(prefix, xs) ++ prependToAll(prefix, l2))) == (List(prefix ++ x) ++ prependToAll(prefix, xs++l2)) because {paDistributiveOverAppend(prefix, xs, l2)}} &&
           check {(List(prefix ++ x) ++ prependToAll(prefix, xs++l2)) == ((prefix ++ x) :: prependToAll(prefix, xs++l2))} &&
           check {((prefix ++ x) :: prependToAll(prefix, xs++l2)) == prependToAll(prefix, x :: (xs++l2))} &&
           check {prependToAll(prefix, x :: (xs++l2)) == prependToAll(prefix, (x :: xs)++l2)}
@@ -347,6 +230,7 @@ object ListOfListsSpecs {
     }
   }.holds
 
+  //the order of appendToAll and prependToAll can be switched
   def appendPrependOrder[T](prefix: List[T], l: List[List[T]], suffix: List[T]): Boolean = {
     prependToAll(prefix, appendToAll(l, suffix)) == appendToAll(prependToAll(prefix, l), suffix) because {
       l match {
@@ -363,45 +247,91 @@ object ListOfListsSpecs {
     }
   }.holds
 
-  def replaceCombinePrepend[T](prefix: List[T], l2: List[List[T]], l3: List[List[T]]): Boolean = {
-    combineLists(prependToAll(prefix,l2),l3).content == prependToAll(prefix, combineLists(l2,l3)).content because {
-      l3 match {
+
+  def appendToAllContains[T](l: List[List[T]], s: List[T], x: List[T]): Boolean = {
+    require(l.contains(x))
+    appendToAll(l,s).contains(x++s) because {
+      l match {
         case Nil() => true
-        case x :: xs => {
-          check {combineLists(prependToAll(prefix,l2),x::xs).content == (appendToAll(prependToAll(prefix, l2), x) ++ combineLists(prependToAll(prefix,l2),xs)).content because {combineListDistributiveRight(prependToAll(prefix, l2), x, xs)}} &&
-          check {(appendToAll(prependToAll(prefix, l2), x) ++ combineLists(prependToAll(prefix,l2),xs)).content == (appendToAll(prependToAll(prefix, l2), x) ++ prependToAll(prefix, combineLists(l2,xs))).content because {replaceCombinePrepend(prefix, l2, xs)}} &&
-          check {(appendToAll(prependToAll(prefix, l2), x) ++ prependToAll(prefix, combineLists(l2,xs))).content == (prependToAll(prefix, appendToAll(l2, x)) ++ prependToAll(prefix, combineLists(l2,xs))).content because {appendPrependOrder(prefix, l2,x)}} &&
-          check {(prependToAll(prefix, appendToAll(l2, x)) ++ prependToAll(prefix, combineLists(l2,xs))).content == prependToAll(prefix, appendToAll(l2, x) ++ combineLists(l2,xs)).content because {prependToAllDistributive(prefix, appendToAll(l2, x), combineLists(l2,xs))}} &&
-          check {prependToAll(prefix, appendToAll(l2, x) ++ combineLists(l2,xs)).content == prependToAll(prefix, combineLists(l2,x::xs)).content because {combineListDistributiveRight(l2,x,xs)}}
+        case y::ys if (x == y) => true
+        case y::ys => appendToAllContains(ys,s,x) because ys.contains(x)
+      }
+    }
+  }.holds
+
+  //this is just a helper lemma for the next one
+  //40-45s
+  def aaRemoveAndAdd[T](l:List[List[T]], s: List[T], x: List[T]): Boolean = {
+    require(l.contains(x))
+    ((x++s) :: appendToAll(l-x,s)).content == appendToAll(l,s).content because {
+      l match {
+        case Nil() => false
+        case y::ys if ((x == y) && (ys contains x)) => {
+          check {appendToAll(x::ys,s).content == ((x++s) ::appendToAll(ys,s)).content} &&
+          check {((x++s) ::appendToAll(ys,s)).content == (Set((x++s)) ++ appendToAll(ys,s).content)} &&
+          check {(Set(x++s) ++ appendToAll(ys,s).content) == (Set(x++s) ++ ((x++s) :: appendToAll(ys-x,s)).content) because {aaRemoveAndAdd(ys,s,x)}} &&
+          check {(Set(x++s) ++ ((x++s) :: appendToAll(ys-x,s)).content) == ((x++s) :: ((x++s)::appendToAll(ys-x,s))).content} &&
+          check {((x++s) :: ((x++s)::appendToAll(ys-x,s))).content == ((x++s)::appendToAll(ys-x,s)).content} &&
+          check {((x++s)::appendToAll(ys-x,s)).content == ((x++s)::appendToAll((x::ys)-x,s)).content}
+        }
+        case y::ys if (x==y) => {
+          check {appendToAll(x::ys,s).content == ((x++s) ::appendToAll(ys,s)).content} &&
+          check {!ys.contains(x)}
+          check {ys == ((x::ys)-x) because {prependAndRemoveNotContaining(x,ys)}} &&
+          check {((x++s) ::appendToAll(ys,s)).content == ((x++s) ::appendToAll((x::ys)-x,s)).content}
+        }
+        case y::ys => {
+          check {appendToAll(y::ys,s).content == ((y++s) :: appendToAll(ys,s)).content} &&
+          check {((y++s) :: appendToAll(ys,s)).content == (Set(y++s) ++appendToAll(ys,s).content)} &&
+          check {(Set(y++s) ++appendToAll(ys,s).content) == (Set(y++s) ++((x++s) :: appendToAll(ys-x,s)).content) because {aaRemoveAndAdd(ys,s,x)}} &&
+          check {(Set(y++s) ++((x++s) :: appendToAll(ys-x,s)).content) == (Set(y++s) ++ Set(x++s) ++ appendToAll(ys-x,s).content)} &&
+          check {(Set(y++s) ++ Set(x++s) ++ appendToAll(ys-x,s).content) == (Set(x++s) ++ (Set(y++s) ++ appendToAll(ys-x,s).content))} &&
+          check {(Set(x++s) ++ (Set(y++s) ++ appendToAll(ys-x,s).content)) == (Set(x++s) ++ ((y++s) :: appendToAll(ys-x,s)).content)} &&
+          check {(Set(x++s) ++ ((y++s) :: appendToAll(ys-x,s)).content) == (Set(x++s) ++ appendToAll(y::(ys-x),s).content)} &&
+          check {(Set(x++s) ++ appendToAll(y::(ys-x),s).content) == (Set(x++s) ++ appendToAll((y::ys)-x,s).content)}
         }
       }
     }
   }.holds
 
-
-  //What the hell takes 150s on this postcondition to verify???
-  def combineListAssoc[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
-    combineLists(combineLists(l1,l2),l3).content == combineLists(l1, combineLists(l2,l3)).content because {
+  // if two list has the same content then appeding the same item to each of
+  // the lists yield lists with same content
+  def aaWithContentEquals[T](l1: List[List[T]], l2: List[List[T]], suffix: List[T]): Boolean = {
+    require(l1.content == l2.content)
+    decreases(l1.size)
+    appendToAll(l1, suffix).content == appendToAll(l2,suffix).content because {
       l1 match {
-        case Nil() => check {combineLists(combineLists(Nil[List[T]](),l2),l3).content == combineLists(Nil[List[T]](), combineLists(l2,l3)).content}
-        case x :: xs => {
-          combineLists(combineLists(x::xs,l2),l3).content ==|  (combineListDistributiveLeft(x,xs,l2) && contentTraverses(combineLists(x::xs,l2),prependToAll(x,l2) ++ combineLists(xs,l2) , l3)) |
-          combineLists(prependToAll(x,l2) ++ combineLists(xs,l2),l3).content ==| combineListsDistributiveAppend(prependToAll(x,l2), combineLists(xs,l2) ,l3) |
-          (combineLists(prependToAll(x,l2),l3) ++ combineLists(combineLists(xs,l2),l3)).content ==| combineListAssoc(xs,l2,l3) |
-          (combineLists(prependToAll(x,l2),l3) ++ combineLists(xs, combineLists(l2,l3))).content ==| replaceCombinePrepend(x,l2,l3) |
-          (prependToAll(x,combineLists(l2,l3)) ++ combineLists(xs, combineLists(l2,l3))).content ==| combineListDistributiveLeft(x,xs,combineLists(l2,l3)) |
-          combineLists(x::xs, combineLists(l2,l3)).content
-        }.qed
+        case Nil() => true
+        case x :: xs if xs.contains(x) => {
+          check {xs.content == (x::xs).content} &&
+          check {appendToAll(x::xs, suffix).content == ( (x++suffix) ::appendToAll(xs,suffix)).content} &&
+          check {( (x++suffix) ::appendToAll(xs,suffix)).content == appendToAll(xs,suffix).content because {appendToAllContains(xs,suffix,x)}}
+          check {appendToAll(xs,suffix).content == appendToAll(l2,suffix).content because { (xs.content == l2.content) && aaWithContentEquals(xs,l2,suffix)}}
+        }
+        case x :: xs  => {
+          check {appendToAll(x::xs, suffix).content == ((x++suffix) :: appendToAll(xs,suffix)).content} &&
+          check {((x++suffix) :: appendToAll(xs,suffix)).content == Set(x++suffix) ++ appendToAll(xs,suffix).content} &&
+          check {Set(x++suffix) ++ appendToAll(xs,suffix).content ==  Set(x++suffix) ++ appendToAll(l2-x,suffix).content because {aaWithContentEquals(xs, l2-x, suffix)}} &&
+          check {Set(x++suffix) ++ appendToAll(l2-x,suffix).content == ((x++suffix) :: appendToAll(l2-x,suffix)).content} &&
+          check {((x++suffix) :: appendToAll(l2-x,suffix)).content == appendToAll(l2,suffix).content because {aaRemoveAndAdd(l2,suffix,x)}}
+        }
       }
     }
   }.holds
+}
 
-  def combineListDistributiveRight[T](l1: List[List[T]], w: List[T], l2: List[List[T]]): Boolean = {
+import AppendPrependSpecs._
+
+//Theorems about the combineLists operation
+object CombineListsSpecs {
+
+
+  def clInductRight[T](l1: List[List[T]], w: List[T], l2: List[List[T]]): Boolean = {
     combineLists(l1, w::l2).content == (appendToAll(l1, w) ++ combineLists(l1, l2)).content
   }.holds
 
 
-  def combineListDistributiveLeft[T](w: List[T], l1: List[List[T]], l2: List[List[T]]): Boolean = {
+  def clInductLeft[T](w: List[T], l1: List[List[T]], l2: List[List[T]]): Boolean = {
     decreases(l2.size)
     combineLists(w::l1, l2).content == (prependToAll(w, l2) ++ combineLists(l1, l2)).content because {
       l2 match {
@@ -409,13 +339,117 @@ object ListOfListsSpecs {
         case x :: xs => {
           combineLists(w::l1, x::xs).content                                                            ==| trivial |
           (appendToAll(w::l1, x) ++ combineLists(w::l1, xs)).content                                    ==| trivial |
-          (List(w ++ x) ++ appendToAll(l1, x) ++ combineLists(w::l1, xs)).content                       ==| combineListDistributiveLeft(w,l1,xs) |
+          (List(w ++ x) ++ appendToAll(l1, x) ++ combineLists(w::l1, xs)).content                       ==| clInductLeft(w,l1,xs) |
           (List(w ++ x) ++ appendToAll(l1, x) ++ (prependToAll(w, xs) ++ combineLists(l1,xs))).content  ==| trivial |
           (List(w ++ x) ++ appendToAll(l1, x) ++ prependToAll(w, xs) ++ combineLists(l1,xs)).content    ==| trivial |
           (List(w ++ x) ++ prependToAll(w, xs) ++ appendToAll(l1, x) ++ combineLists(l1,xs)).content    ==| trivial |
           (prependToAll(w, x::xs) ++ appendToAll(l1, x) ++ combineLists(l1,xs)).content                 ==| trivial |
           (prependToAll(w, x::xs) ++ (appendToAll(l1, x) ++ combineLists(l1,xs))).content               ==| trivial |
           (prependToAll(w, x::xs) ++ combineLists(l1,x::xs)).content
+        }.qed
+      }
+    }
+  }.holds
+
+  //Generalizing the previous theorem
+  //Not that I'd complain but it was 169.5s...
+  def clLeftDistributiveAppend[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
+    decreases(l1.size)
+    combineLists(l1 ++ l2, l3).content == (combineLists(l1,l3) ++ combineLists(l2,l3)).content because {
+      l1 match {
+        case Nil() => true
+        case x :: xs => {
+          check {combineLists((x::xs) ++ l2, l3).content == combineLists(x:: (xs ++ l2), l3).content} &&
+          check {combineLists(x:: (xs ++ l2), l3).content == (prependToAll(x, l3) ++ combineLists(xs ++ l2,l3)).content because {clInductLeft(x,xs++l2,l3)}} &&
+          check {(prependToAll(x, l3) ++ combineLists(xs ++ l2,l3)).content == (prependToAll(x, l3) ++ (combineLists(xs ,l3) ++ combineLists(l2,l3))).content because {clLeftDistributiveAppend(xs,l2,l3)}} &&
+          check {(prependToAll(x, l3) ++ (combineLists(xs ,l3) ++ combineLists(l2,l3))).content == ((prependToAll(x, l3) ++ combineLists(xs ,l3)) ++ combineLists(l2,l3)).content because{ListSpecs.appendAssoc(prependToAll(x, l3), combineLists(xs ,l3), combineLists(l2,l3))}} &&
+          check {((prependToAll(x, l3) ++ combineLists(xs ,l3)) ++ combineLists(l2,l3)).content == (combineLists(x::xs ,l3) ++ combineLists(l2,l3)).content because {clInductLeft(x,xs,l3)}}
+        }
+      }
+    }
+  }.holds
+
+  // reversing the combination of reverses results the combination
+  // pretty nice theorem, it's a shame I currently don't use it
+  def doubleReverseCombineList[T](l1: List[List[T]], l2: List[List[T]]): Boolean = {
+    decreases(l1.size)
+    combineLists(l1,l2).content == reverseAll(combineLists(reverseAll(l2), reverseAll(l1))).content because {
+      l1 match {
+        case Nil() => check {combineLists(Nil[List[T]](), l2).content == reverseAll(combineLists(reverseAll(l2), reverseAll(l1))).content}
+        case x :: xs => {
+          combineLists(x :: xs,l2).content                                                                                        ==| clInductLeft(x,xs,l2) |
+          (prependToAll(x,l2) ++ combineLists(xs, l2)).content                                                                    ==| convertPaToAa(x,l2) |
+          (reverseAll(appendToAll(reverseAll(l2),x.reverse)) ++ combineLists(xs, l2)).content                                     ==| doubleReverseCombineList(xs,l2) |
+          (reverseAll(appendToAll(reverseAll(l2),x.reverse)) ++ reverseAll(combineLists(reverseAll(l2),reverseAll(xs)))).content  ==| reverseAllConcat(appendToAll(reverseAll(l2),x.reverse),combineLists(reverseAll(l2),reverseAll(xs))) |
+          reverseAll(appendToAll(reverseAll(l2),x.reverse) ++ combineLists(reverseAll(l2),reverseAll(xs))).content                ==| trivial |
+          reverseAll(combineLists(reverseAll(l2),x.reverse :: reverseAll(xs))).content                                            ==| trivial |
+          reverseAll(combineLists(reverseAll(l2),reverseAll(x::xs))).content
+        }.qed
+      }
+    }
+  }.holds
+
+  //apply structural induction on both left and right hand side operators
+  def explode[T](x: List[T], xs: List[List[T]], y: List[T], ys: List[List[T]]): Boolean = {
+    combineLists(x::xs, y::ys).content == (List(x ++ y) ++ appendToAll(xs,y) ++ prependToAll(x,ys) ++ combineLists(xs, ys)).content because {
+        combineLists(x::xs, y::ys).content                                                              ==| trivial                                                                                               |
+        (appendToAll(x::xs, y) ++ combineLists(x::xs, ys)).content                                      ==| clInductLeft(x,xs,ys)                                                                  |
+        (appendToAll(x::xs, y) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content                ==| (appendToAll(x::xs, y) == ((x ++ y) :: appendToAll(xs, y)))                                           |
+        (((x ++ y) :: appendToAll(xs, y)) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content     ==| ((x ++ y) :: appendToAll(xs, y) == (List(x ++ y) ++ appendToAll(xs, y)))                              |
+        ((List(x ++ y) ++ appendToAll(xs, y)) ++ (prependToAll(x, ys) ++ combineLists(xs, ys))).content ==| ListSpecs.appendAssoc(List(x ++ y) ++ appendToAll(xs, y), prependToAll(x, ys), combineLists(xs, ys))  |
+        (((List(x ++ y) ++ appendToAll(xs, y)) ++ prependToAll(x, ys)) ++ combineLists(xs, ys)).content
+    }.qed
+  }.holds
+
+  // If the content of two lists is the same, than combining them to the same
+  // list will yield lists with the same content
+  //TODO the theorem has a pair with the second arguments, but it will involve the sort-of dual of every other theorems
+  def clContentEquals[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
+    require(l1.content == l2.content)
+    combineLists(l1, l3).content == combineLists(l2, l3).content because {
+      l3 match {
+        case Nil() => check{true}
+        case x::xs => {
+          check {combineLists(l1, x::xs).content == (appendToAll(l1, x) ++ combineLists(l1, xs)).content because {clInductRight(l1,x,xs)}} &&
+          check {(appendToAll(l1, x) ++ combineLists(l1, xs)).content == (appendToAll(l1, x).content ++ combineLists(l1, xs).content)} &&
+          check {(appendToAll(l1, x).content ++ combineLists(l1, xs).content) == (appendToAll(l1, x).content ++ combineLists(l2, xs).content) because {clContentEquals(l1,l2,xs)}} &&
+          check {(appendToAll(l1, x).content ++ combineLists(l2, xs).content) == (appendToAll(l2, x).content ++ combineLists(l2, xs).content) because {aaWithContentEquals(l1,l2,x)}} &&
+          check {(appendToAll(l2, x).content ++ combineLists(l2, xs).content) == (appendToAll(l2, x) ++ combineLists(l2, xs)).content} &&
+          check {(appendToAll(l2, x) ++ combineLists(l2, xs)).content == (combineLists(l2, x::xs)).content because {clInductRight(l2,x,xs)}}
+        }
+      }
+    }
+  }.holds
+
+  //prepending the suffix can be moved outside the list combination
+  def replaceCombinePrepend[T](prefix: List[T], l2: List[List[T]], l3: List[List[T]]): Boolean = {
+    combineLists(prependToAll(prefix,l2),l3).content == prependToAll(prefix, combineLists(l2,l3)).content because {
+      l3 match {
+        case Nil() => true
+        case x :: xs => {
+          check {combineLists(prependToAll(prefix,l2),x::xs).content == (appendToAll(prependToAll(prefix, l2), x) ++ combineLists(prependToAll(prefix,l2),xs)).content because {clInductRight(prependToAll(prefix, l2), x, xs)}} &&
+          check {(appendToAll(prependToAll(prefix, l2), x) ++ combineLists(prependToAll(prefix,l2),xs)).content == (appendToAll(prependToAll(prefix, l2), x) ++ prependToAll(prefix, combineLists(l2,xs))).content because {replaceCombinePrepend(prefix, l2, xs)}} &&
+          check {(appendToAll(prependToAll(prefix, l2), x) ++ prependToAll(prefix, combineLists(l2,xs))).content == (prependToAll(prefix, appendToAll(l2, x)) ++ prependToAll(prefix, combineLists(l2,xs))).content because {appendPrependOrder(prefix, l2,x)}} &&
+          check {(prependToAll(prefix, appendToAll(l2, x)) ++ prependToAll(prefix, combineLists(l2,xs))).content == prependToAll(prefix, appendToAll(l2, x) ++ combineLists(l2,xs)).content because {paDistributiveOverAppend(prefix, appendToAll(l2, x), combineLists(l2,xs))}} &&
+          check {prependToAll(prefix, appendToAll(l2, x) ++ combineLists(l2,xs)).content == prependToAll(prefix, combineLists(l2,x::xs)).content because {clInductRight(l2,x,xs)}}
+        }
+      }
+    }
+  }.holds
+
+
+  //What the hell takes 150s on this postcondition to verify???
+  def clAssociative[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
+    combineLists(combineLists(l1,l2),l3).content == combineLists(l1, combineLists(l2,l3)).content because {
+      l1 match {
+        case Nil() => check {combineLists(combineLists(Nil[List[T]](),l2),l3).content == combineLists(Nil[List[T]](), combineLists(l2,l3)).content}
+        case x :: xs => {
+          combineLists(combineLists(x::xs,l2),l3).content ==|  (clInductLeft(x,xs,l2) && clContentEquals(combineLists(x::xs,l2),prependToAll(x,l2) ++ combineLists(xs,l2) , l3)) |
+          combineLists(prependToAll(x,l2) ++ combineLists(xs,l2),l3).content ==| clLeftDistributiveAppend(prependToAll(x,l2), combineLists(xs,l2) ,l3) |
+          (combineLists(prependToAll(x,l2),l3) ++ combineLists(combineLists(xs,l2),l3)).content ==| clAssociative(xs,l2,l3) |
+          (combineLists(prependToAll(x,l2),l3) ++ combineLists(xs, combineLists(l2,l3))).content ==| replaceCombinePrepend(x,l2,l3) |
+          (prependToAll(x,combineLists(l2,l3)) ++ combineLists(xs, combineLists(l2,l3))).content ==| clInductLeft(x,xs,combineLists(l2,l3)) |
+          combineLists(x::xs, combineLists(l2,l3)).content
         }.qed
       }
     }

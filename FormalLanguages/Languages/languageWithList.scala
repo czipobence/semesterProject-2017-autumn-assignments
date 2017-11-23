@@ -5,7 +5,8 @@ import stainless.annotation._
 
 //to split into multiple files just incude them and pass all to stainless
 import ListOfLists._
-import ListOfListsSpecs._
+import AppendPrependSpecs._
+import CombineListsSpecs._
 
 case class Lang[T](list: List[List[T]]) {
 
@@ -90,7 +91,7 @@ object LangSpecs {
 
   def associativity[T](l1: Lang[T], l2: Lang[T], l3:Lang[T]): Boolean = {
     (l1 combine (l2 combine l3)) sameAs ((l1 combine l2) combine l3) because {
-      combineListAssoc(l1.list, l2.list, l3.list)
+      clAssociative(l1.list, l2.list, l3.list)
     }
   }.holds
 
@@ -100,7 +101,7 @@ object LangSpecs {
 
   def combineDistributiveLeft[T](w: List[T], l1: Lang[T], l2: Lang[T]): Boolean = {
     ( (w ::  l1) combine l2) sameAs Lang[T](prependToAll(w, l2.list)) ++ (l1 combine l2) because {
-        combineListDistributiveLeft(w,l1.list,l2.list)
+        clInductLeft(w,l1.list,l2.list)
     }
   }.holds
 
