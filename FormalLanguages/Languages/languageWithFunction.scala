@@ -21,6 +21,23 @@ case class Lang[T](f: List[T] => Boolean) {
         )
     }
 
+    def concat(that: Lang[T]): Lang[T] = {
+      Lang[T](l => !forall( (i: BigInt) => !(
+        i <= l.size &&
+        i >= 0 &&
+        this.contains(l.take(i)) &&
+        that.contains(l.drop(i))
+      )))
+    }
+
+    def concatTest():Boolean = {
+      (Lang[Int](a => (a == List[Int](3))) concat Lang[Int](a => (a == List[Int](5))) ).contains(List[Int](5,3))
+    }.holds
+
+    def ++(that: Lang[T]): Lang[T] = {
+      Lang[T](w => this.f(w) || that.f(w))
+    }
+
     // How could we define equality otherwise, there is no way that this would verify
     // x => f(x) =? x => exists n. f(x.take(n)) && unit(x.drop(n))
     def isEqual (that: Lang[T]): Boolean = {
