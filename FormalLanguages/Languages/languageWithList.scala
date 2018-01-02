@@ -6,12 +6,12 @@ import stainless.annotation._
 //to split into multiple files just incude them and pass all to stainless
 import ListOfLists._
 import AppendPrependSpecs._
-import CombineListsSpecs._
+import ConcatListsSpecs._
 
 case class Lang[T](list: List[List[T]]) {
 
-  def combine(that: Lang[T]): Lang[T] = {
-    Lang[T](combineLists(this.list, that.list))
+  def concat(that: Lang[T]): Lang[T] = {
+    Lang[T](concatLists(this.list, that.list))
   }
 
   def ::(t: List[T]): Lang[T] = {
@@ -38,6 +38,22 @@ case class Lang[T](list: List[List[T]]) {
   }
 
   def contains(word: List[T]): Boolean = list.contains(word)
+
+  def ^ (i: BigInt): Lang[T] = i match {
+    case BigInt(0) => Lang[T](List(Nil()))
+    case _ => this concat (this ^ (i-1))
+  }
+
+  def close(i: BigInt): Lang[T] = i match {
+    case BigInt(0) => this ^ i
+    case _ => (this close (i-1)) ++ (this ^ i)
+  }
+
+  def :^ (i: BigInt): Lang[T] = i match {
+    case BigInt(0) => Lang[T](List(Nil()))
+    case _ =>  (this ^ (i-1)) concat this
+  }
+
 }
 
 object Lang {
@@ -49,16 +65,16 @@ import Lang._
 
 object LangSpecs {
 
-  def rightUnitCombine[T](l1: Lang[T]): Boolean = {
+  def rightUnitConcat[T](l1: Lang[T]): Boolean = {
 
-    l1.combine(unitLang()) sameAs l1 because {
+    l1.concat(unitLang()) sameAs l1 because {
       l1 match {
         case Lang(Nil()) => true
         case Lang(x :: xs) => {
-          Lang[T](x :: xs).combine(unitLang())                                          ==| trivial                                             |
-          (x:: Lang[T](xs)).combine(unitLang())                                         ==| combineDistributiveLeft(x, Lang[T](xs), unitLang()) |
-          Lang[T](prependToAll(x, unitLang().list)) ++ (Lang[T](xs) combine unitLang()) ==| prependToEmptyList(x)                               |
-          Lang[T](List(x)) ++ (Lang[T](xs) combine unitLang())                          ==| rightUnitCombine(Lang[T](xs))                       |
+          Lang[T](x :: xs).concat(unitLang())                                          ==| trivial                                             |
+          (x:: Lang[T](xs)).concat(unitLang())                                         ==| concatDistributiveLeft(x, Lang[T](xs), unitLang()) |
+          Lang[T](prependToAll(x, unitLang().list)) ++ (Lang[T](xs) concat unitLang()) ==| prependToEmptyList(x)                               |
+          Lang[T](List(x)) ++ (Lang[T](xs) concat unitLang())                          ==| rightUnitConcat(Lang[T](xs))                       |
           Lang[T](List(x)) ++ Lang[T](xs)                                               ==| trivial                                             |
           Lang[T](x :: xs)
         }.qed
@@ -66,14 +82,14 @@ object LangSpecs {
     }
   }.holds
 
-  def leftUnitCombine[T](l1: Lang[T]): Boolean = {
-    unitLang().combine(l1) sameAs l1 because {
+  def leftUnitConcat[T](l1: Lang[T]): Boolean = {
+    unitLang().concat(l1) sameAs l1 because {
       l1 match {
         case Lang(Nil()) => true
         case Lang(x :: xs) => {
-          (unitLang().combine(x ::Lang[T](xs)))                                           ==| combineDistributiveRight(unitLang(), x, Lang[T](xs))  |
-          (Lang[T](appendToAll(unitLang().list, x)) ++ (unitLang() combine  Lang[T](xs))) ==| trivial                                             |
-          (Lang[T](List(x)) ++ (unitLang() combine  Lang[T](xs)))                         ==| leftUnitCombine(Lang[T](xs))                        |
+          (unitLang().concat(x ::Lang[T](xs)))                                           ==| concatDistributiveRight(unitLang(), x, Lang[T](xs))  |
+          (Lang[T](appendToAll(unitLang().list, x)) ++ (unitLang() concat  Lang[T](xs))) ==| trivial                                             |
+          (Lang[T](List(x)) ++ (unitLang() concat  Lang[T](xs)))                         ==| leftUnitConcat(Lang[T](xs))                        |
           (Lang[T](List(x)) ++  Lang[T](xs))                                              ==| trivial                                             |
           Lang[T](x :: xs)
         }.qed
@@ -81,27 +97,109 @@ object LangSpecs {
     }
   }.holds
 
-  def rightNullCombine[T](l1: Lang[T]): Boolean = {
-    l1.combine(nullLang[T]()) sameAs nullLang[T]()
+  def rightNullConcat[T](l1: Lang[T]): Boolean = {
+    l1.concat(nullLang[T]()) sameAs nullLang[T]()
   }.holds
 
-  def leftNullCombine[T](l1: Lang[T]): Boolean = {
-    nullLang[T]().combine(l1) sameAs nullLang[T]()
+  def leftNullConcat[T](l1: Lang[T]): Boolean = {
+    nullLang[T]().concat(l1) sameAs nullLang[T]()
   }.holds
 
   def associativity[T](l1: Lang[T], l2: Lang[T], l3:Lang[T]): Boolean = {
-    (l1 combine (l2 combine l3)) sameAs ((l1 combine l2) combine l3) because {
+    (l1 concat (l2 concat l3)) sameAs ((l1 concat l2) concat l3) because {
       clAssociative(l1.list, l2.list, l3.list)
     }
   }.holds
 
-  def combineDistributiveRight[T](l1: Lang[T], w: List[T], l2: Lang[T]): Boolean = {
-    ((l1 combine (w :: l2)) sameAs (Lang[T](appendToAll(l1.list, w)) ++ (l1 combine l2)))
+  def concatDistributiveRight[T](l1: Lang[T], w: List[T], l2: Lang[T]): Boolean = {
+    ((l1 concat (w :: l2)) sameAs (Lang[T](appendToAll(l1.list, w)) ++ (l1 concat l2)))
   }.holds
 
-  def combineDistributiveLeft[T](w: List[T], l1: Lang[T], l2: Lang[T]): Boolean = {
-    ( (w ::  l1) combine l2) sameAs Lang[T](prependToAll(w, l2.list)) ++ (l1 combine l2) because {
+  def concatDistributiveLeft[T](w: List[T], l1: Lang[T], l2: Lang[T]): Boolean = {
+    ( (w ::  l1) concat l2) sameAs Lang[T](prependToAll(w, l2.list)) ++ (l1 concat l2) because {
         clInductLeft(w,l1.list,l2.list)
+    }
+  }.holds
+
+  def concatSameAs[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    require(l1 sameAs l2)
+    (l1 concat l3) sameAs (l2 concat l3) because {
+      clContentEquals(l1.list,l2.list,l3.list)
+    }
+  }.holds
+
+  def concatSameAs2[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    require(l2 sameAs l3)
+    (l1 concat l2) sameAs (l1 concat l3) because {
+      clContentEquals2(l1.list,l2.list,l3.list)
+    }
+  }.holds
+
+  def couldHaveDefinedOtherWay[T](l: Lang[T], i: BigInt): Boolean = {
+    (l ^ i) sameAs (l :^i) because {
+      i match {
+        case BigInt(0) => check{(l^0) sameAs (l:^0)}
+        case BigInt(1) => {
+          check {(l^1) sameAs (l concat (l^0))} &&
+          check {(l concat (l^0)) sameAs (l concat unitLang[T]())} &&
+          check {(l concat unitLang[T]()) sameAs l because {rightUnitConcat(l)}} &&
+          check {l sameAs (unitLang[T]() concat l) because {leftUnitConcat(l)}} &&
+          check {(unitLang[T]() concat l) sameAs ((l:^0) concat l)} &&
+          check {((l:^0) concat l) sameAs l^1}
+        }
+        case _ => {
+          check {(l^i) sameAs (l concat (l ^ (i-1)))} &&
+          check {(l concat (l ^ (i-1))) sameAs (l concat (l :^ (i-1))) because{couldHaveDefinedOtherWay(l,i-1) && concatSameAs2(l, (l ^ (i-1)), (l :^ (i-1)))}} &&
+          check {(l concat (l :^ (i-1))) sameAs (l concat ((l :^ (i-2)) concat l)) because {concatSameAs2(l, (l :^ (i-1)), ((l :^ (i-2)) concat l))}} &&
+          check {(l concat ((l :^ (i-2)) concat l)) sameAs ((l concat (l :^ (i-2))) concat l) because {associativity(l, l:^(i-2),l)}} &&
+          check {((l concat (l :^ (i-2))) concat l) sameAs ((l concat (l ^ (i-2))) concat l) because {couldHaveDefinedOtherWay(l,i-2) && concatSameAs2(l, (l :^ (i-2)), (l ^ (i-2))) && concatSameAs((l concat (l :^ (i-2))), (l concat (l ^ (i-2))), l)}} &&
+          check {((l concat (l ^ (i-2))) concat l) sameAs ((l ^ (i-1)) concat l)} &&
+          check {((l ^ (i-1)) concat l) sameAs ((l :^ (i-1)) concat l) because{couldHaveDefinedOtherWay(l,i-1)} && concatSameAs((l ^ (i-1)), (l :^ (i-1)), l)} &&
+          check {((l :^ (i-1)) concat l) sameAs (l :^ i)}
+        }
+      }
+    }
+  }.holds
+
+  def nullLangClose[T](n: BigInt): Boolean = {
+    (nullLang() close n) sameAs unitLang() because {
+      n match {
+        case BigInt(0) => check{(nullLang() close 0) == unitLang()}
+        case _ => {
+          check {(nullLang() close n) == (nullLang() close (n-1)) ++ (nullLang() ^ n)} &&
+          check {(nullLang() close (n-1)) ++ (nullLang() ^ n) == unitLang() ++ (nullLang() ^ n) because{nullLangClose(n-1)}} &&
+          check {unitLang() ++ (nullLang() ^ n) == unitLang() ++ nullLang()} &&
+          check {unitLang() ++ nullLang() == unitLang()}
+        }
+      }
+    }
+  }.holds
+
+  def unitLangPow[T](n: BigInt): Boolean = {
+    (unitLang() ^ n) sameAs unitLang() because {
+      n match {
+        case BigInt(0) => true
+        case _ => {
+          check{(unitLang() ^ n) sameAs (unitLang() concat (unitLang() ^ (n-1)))} &&
+          check{(unitLang() concat (unitLang() ^ (n-1))) sameAs (unitLang() concat unitLang() ^ n-1)} &&
+          check{(unitLang() concat unitLang() ^ n-1) sameAs (unitLang ^ (n-1)) because{leftUnitConcat(unitLang ^ (n-1))}} &&
+          check{(unitLang ^ (n-1)) sameAs (unitLang()) because {unitLangPow(n-1)}}
+        }
+      }
+    }
+  }.holds
+
+  def unitLangClose[T](n: BigInt): Boolean = {
+    (unitLang() close n) sameAs unitLang() because {
+      n match {
+        case BigInt(0) => check{(unitLang() close 0) sameAs unitLang()}
+        case _ => {
+          check {(unitLang() close n) sameAs (unitLang() close (n-1)) ++ (unitLang() ^ n)} &&
+          check {(unitLang() close (n-1)) ++ (unitLang() ^ n) sameAs unitLang() ++ (unitLang() ^ n) because{unitLangClose(n-1)}} &&
+          check {unitLang() ++ (unitLang() ^ n) sameAs unitLang() ++ unitLang() because{unitLangPow(n)}} &&
+          check {unitLang() ++ unitLang() sameAs unitLang()}
+        }
+      }
     }
   }.holds
 
