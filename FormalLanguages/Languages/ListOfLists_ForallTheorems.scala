@@ -79,12 +79,12 @@ object SetSpecs {
 }
 
 object ListOfListsForall {
-  def combineListsContentLemma2[T] (l1: List[List[T]], l2: List[List[T]]): Boolean = {
+  def concatListsContentLemma2[T] (l1: List[List[T]], l2: List[List[T]]): Boolean = {
     forall((x: List[T], y: List[T]) => {
       if (l1.contains(x))
         if (l2.contains(y))
-          combineLists(l1,l2).contains(x++y) because {
-            combineListsContentLemma(x,y,l1,l2)
+          concatLists(l1,l2).contains(x++y) because {
+            concatListsContentLemma(x,y,l1,l2)
           }
         else
           true
@@ -99,21 +99,21 @@ object ListOfListsForall {
   }.holds
 
   //this one also can't verify
-  def combineListsContentLemma[T] (x: List[T], y: List[T], l1: List[List[T]], l2: List[List[T]]): Boolean = {
+  def concatListsContentLemma[T] (x: List[T], y: List[T], l1: List[List[T]], l2: List[List[T]]): Boolean = {
     require(l1.contains(x) && l2.contains(y))
-    combineLists(l1,l2).contains(x++y) == true because {
+    concatLists(l1,l2).contains(x++y) == true because {
       l2 match {
         case Nil() => check{false}
         case z :: zs => if (z == y) {
-          combineLists(l1,y::zs).contains(x++y) ==| trivial |
-          (appendToAll(l1, y) ++ combineLists(l1 ,zs)).contains(x++y) ==| trivial |
-          (appendToAll(l1, y).contains(x++y) || combineLists(l1 ,zs).contains(x++y)) ==| appendToAll(l1, y).contains(x++y) |
+          concatLists(l1,y::zs).contains(x++y) ==| trivial |
+          (appendToAll(l1, y) ++ concatLists(l1 ,zs)).contains(x++y) ==| trivial |
+          (appendToAll(l1, y).contains(x++y) || concatLists(l1 ,zs).contains(x++y)) ==| appendToAll(l1, y).contains(x++y) |
           true
         }.qed
         else {
-          combineLists(l1,z::zs).contains(x++y) ==| trivial |
-          (appendToAll(l1, z) ++ combineLists(l1 ,zs)).contains(x++y) ==| trivial |
-          (appendToAll(l1, z).contains(x++y) || combineLists(l1 ,zs).contains(x++y)) ==| combineListsContentLemma(x,y,l1,zs) |
+          concatLists(l1,z::zs).contains(x++y) ==| trivial |
+          (appendToAll(l1, z) ++ concatLists(l1 ,zs)).contains(x++y) ==| trivial |
+          (appendToAll(l1, z).contains(x++y) || concatLists(l1 ,zs).contains(x++y)) ==| concatListsContentLemma(x,y,l1,zs) |
           true
         }.qed
       }

@@ -13,14 +13,6 @@ case class Lang[T](f: List[T] => Boolean) {
       !res ==> forall( (i: BigInt) => i <= n ==> !(this.contains(l.take(i)) && that.contains(l.drop(i))) )
     }
 
-    def combine(that: Lang[T]): Lang[T] = {
-      Lang[T](l => searchSplitIter(that, 0, l))
-    }.ensuring {res =>
-      forall((t1: List[T], t2: List[T]) =>
-        (this.contains(t1) && that.contains(t2)) ==> res.contains(t1 ++ t2)
-        )
-    }
-
     def concat(that: Lang[T]): Lang[T] = {
       Lang[T](l => !forall( (i: BigInt) => !(
         i <= l.size &&
@@ -54,20 +46,20 @@ object LangSuite {
 
   def nullLang[T](): Lang[T] = Lang[T](l => false)
 
-  def rightUnitCombine[T](l1: Lang[T]): Boolean = {
-    l1.combine(unitLang[T]()) isEqual l1
+  def rightUnitConcat[T](l1: Lang[T]): Boolean = {
+    l1.concat(unitLang[T]()) isEqual l1
   }.holds
 
-  def leftUnitCombine[T](l1: Lang[T]): Boolean = {
-    unitLang[T]().combine(l1) isEqual l1
+  def leftUnitConcat[T](l1: Lang[T]): Boolean = {
+    unitLang[T]().concat(l1) isEqual l1
   }.holds
 
 
-  def rightNullCombine[T](l1: Lang[T]): Boolean = {
-    l1.combine(nullLang[T]()) isEqual nullLang[T]()
+  def rightNullConcat[T](l1: Lang[T]): Boolean = {
+    l1.concat(nullLang[T]()) isEqual nullLang[T]()
   }.holds
 
-  def leftNullCombine[T](l1: Lang[T]): Boolean = {
-    nullLang[T]().combine(l1) isEqual nullLang[T]()
+  def leftNullConcat[T](l1: Lang[T]): Boolean = {
+    nullLang[T]().concat(l1) isEqual nullLang[T]()
   }.holds
 }

@@ -11,7 +11,7 @@ case class Lang[T](set: Set[List[T]]) {
    * for the "languageWithFunction" solution but in that way the solution is
    * not closer at all 
    */
-  def combine(that: Lang[T]): Lang[T] = {
+  def concat(that: Lang[T]): Lang[T] = {
     Lang[T](this.set ++ that.set)
   }
 
@@ -23,21 +23,21 @@ object LangSuite {
 
   def nullLang[T](): Lang[T] = Lang[T](l => false)
 
-  def rightUnitCombine[T](l1: Lang[T]): Boolean = {
-   l1.combine(unitLang[T]) == l1
+  def rightUnitConcat[T](l1: Lang[T]): Boolean = {
+   l1.concat(unitLang[T]) == l1
   }.holds
 
-  def leftUnitCombine[T](l1: Lang[T]): Boolean = {
-    unitLang[T].combine(l1) == l1
+  def leftUnitConcat[T](l1: Lang[T]): Boolean = {
+    unitLang[T].concat(l1) == l1
   }.holds
 
 
-    def rightNullCombine[T](l1: Lang[T]): Boolean = {
-     l1.combine(nullLang[T]) == nullLang[T]
+    def rightNullConcat[T](l1: Lang[T]): Boolean = {
+     l1.concat(nullLang[T]) == nullLang[T]
     }.holds
 
-    def leftNullCombine[T](l1: Lang[T]): Boolean = {
-      nullLang[T].combine(l1) == nullLang[T]
+    def leftNullConcat[T](l1: Lang[T]): Boolean = {
+      nullLang[T].concat(l1) == nullLang[T]
     }.holds
 
 }
