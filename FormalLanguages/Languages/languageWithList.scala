@@ -27,7 +27,14 @@ case class Lang[T](list: List[List[T]]) {
       (res.list.content == this.list.content ++ that.list.content) &&
       (res.list.size == this.list.size + that.list.size) &&
       (that.list != Nil[List[T]]() || res.list == this.list)
-    }
+  }
+
+  def --(that: Lang[T]): Lang[T] = {
+    Lang[T](this.list -- that.list)
+  } ensuring { res =>
+    (res.list.size <= this.list.size) &&
+    (res.list.content == this.list.content -- that.list.content )
+  }
 
   def == (that: Lang[T]): Boolean = {
     this.list.content == that.list.content
@@ -36,6 +43,10 @@ case class Lang[T](list: List[List[T]]) {
   def sameAs(that: Lang[T]): Boolean = {
     this.list.content == that.list.content
   }
+
+  def subsetOf(that: Lang[T]): Boolean = {
+    this.list.content subsetOf that.list.content
+  }.ensuring{res => res ==> forall((item: List[T]) => this.list.contains(item) ==> that.list.contains(item)  ) }
 
   def contains(word: List[T]): Boolean = list.contains(word)
 
@@ -210,4 +221,35 @@ object LangSpecs {
   def equalityIsSame[T](l1: Lang[T], l2: Lang[T]): Boolean = {
     (l1 == l2) ==> (l1 sameAs l2)
   }.holds
+
+  // Lemmas with subsetOf, stainless is able to verify the most of them,
+  // they are just added for completeness
+  def subsetOfTransitive[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    ((l1 subsetOf l2) && (l2 subsetOf l3)) ==> (l1 subsetOf l3)
+  }.holds
+
+  def inUnionSubset[T](l1: Lang[T], l2: Lang[T]): Boolean = {
+    (l1 subsetOf (l1 ++ l2)) && (l2 subsetOf (l1 ++ l2))
+  }.holds
+
+  def unionSubset[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    ((l1 subsetOf l3) && (l2 subsetOf l3)) ==> ((l1 ++ l2) subsetOf l3)
+  }.holds
+
+  def sameAsSubset[T](l1: Lang[T], l2: Lang[T]): Boolean = {
+    (l1 sameAs l2) ==> (l1 subsetOf l2)
+  }.holds
+
+  def sameAsSubsetTrans[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    ((l1 subsetOf l2) && (l2 sameAs l3)) ==> (l1 subsetOf l3)
+  }.holds
+
+  def subsetSplit[T](l1: Lang[T], l2: Lang[T]): Boolean = {
+    (l1 subsetOf l2) ==> (l2 sameAs (l1 ++ (l2 -- l1)))
+  }.holds
+
+  /*def concatSubset[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    (l1 subsetOf l2) ==> ( (l1 concat l3) subsetOf (l2 concat l3) )
+  }.holds*/
+
 }
