@@ -171,10 +171,6 @@ object ReverseAllSpecs {
     }
   }.holds
 
-  def reverseAllContentMinus[T](l1: List[List[T]], item: List[T]): Boolean = {
-    reverseAll(l1-item).content == reverseAll(l1).content -- Set(item.reverse)
-  }.holds
-
   //helper lemma for the next one
   def raRemoveAndAdd[T](l: List[List[T]], x: List[T]): Boolean = {
     require(l.contains(x))
