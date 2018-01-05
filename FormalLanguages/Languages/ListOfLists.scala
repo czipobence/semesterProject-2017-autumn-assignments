@@ -430,7 +430,7 @@ object ConcatListsSpecs {
 
   //Generalizing the previous theorem
   def clLeftDistributiveAppend[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
-    decreases((l1++l2).size)
+    decreases(l1.size)
     concatLists(l1 ++ l2, l3).content == (concatLists(l1,l3) ++ concatLists(l2,l3)).content because {
       l1 match {
         case Nil() => true
