@@ -414,8 +414,8 @@ object ConcatListsSpecs {
       l2 match {
         case Nil() => check {  concatLists(w::l1, Nil[List[T]]()).content == (prependToAll(w, Nil[List[T]]()) ++ concatLists(l1, Nil[List[T]]())).content}
         case x :: xs => {
-          concatLists(w::l1, x::xs).content                                                            ==| trivial |
-          (appendToAll(w::l1, x) ++ concatLists(w::l1, xs)).content                                    ==| trivial |
+          /*concatLists(w::l1, x::xs).content                                                            ==| trivial |
+          (appendToAll(w::l1, x) ++ concatLists(w::l1, xs)).content                                    ==| trivial |*/
           (List(w ++ x) ++ appendToAll(l1, x) ++ concatLists(w::l1, xs)).content                       ==| clInductLeft(w,l1,xs) |
           (List(w ++ x) ++ appendToAll(l1, x) ++ (prependToAll(w, xs) ++ concatLists(l1,xs))).content  ==| trivial |
           (List(w ++ x) ++ appendToAll(l1, x) ++ prependToAll(w, xs) ++ concatLists(l1,xs)).content    ==| trivial |
@@ -429,16 +429,31 @@ object ConcatListsSpecs {
   }.holds
 
   //Generalizing the previous theorem
-  //Not that I'd complain but it was 169.5s...
   def clLeftDistributiveAppend[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
-    decreases(l1.size)
+    decreases((l1++l2).size)
     concatLists(l1 ++ l2, l3).content == (concatLists(l1,l3) ++ concatLists(l2,l3)).content because {
       l1 match {
         case Nil() => true
         case x :: xs => {
           check {concatLists((x::xs) ++ l2, l3).content == concatLists(x:: (xs ++ l2), l3).content} &&
           check {concatLists(x:: (xs ++ l2), l3).content == (prependToAll(x, l3) ++ concatLists(xs ++ l2,l3)).content because {clInductLeft(x,xs++l2,l3)}} &&
-          check {(prependToAll(x, l3) ++ concatLists(xs ++ l2,l3)).content == (prependToAll(x, l3) ++ (concatLists(xs ,l3) ++ concatLists(l2,l3))).content because {clLeftDistributiveAppend(xs,l2,l3)}} &&
+          check {(prependToAll(x, l3) ++ concatLists(xs ++ l2,l3)).content == (prependToAll(x, l3) ++ (concatLists(xs ,l3) ++ concatLists(l2,l3))).content because {check{xs.size < l1.size} && clLeftDistributiveAppend(xs,l2,l3)}} &&
+          check {(prependToAll(x, l3) ++ (concatLists(xs ,l3) ++ concatLists(l2,l3))).content == ((prependToAll(x, l3) ++ concatLists(xs ,l3)) ++ concatLists(l2,l3)).content because{ListSpecs.appendAssoc(prependToAll(x, l3), concatLists(xs ,l3), concatLists(l2,l3))}} &&
+          check {((prependToAll(x, l3) ++ concatLists(xs ,l3)) ++ concatLists(l2,l3)).content == (concatLists(x::xs ,l3) ++ concatLists(l2,l3)).content because {clInductLeft(x,xs,l3)}}
+        }
+      }
+    }
+  }.holds
+
+  def clLeftDistributiveAppendHelper[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
+    decreases(l1.size)
+    concatLists(l1 ++ l2, l3).content == (concatLists(l1,l3) ++ concatLists(l2,l3)).content because {
+      l1 match {
+        case Nil() => true
+        case x :: xs => {
+          check {concatLists((x::xs) ++ l2, l3).content == concatLists(x:: (xs ++ l2), l3).content} &&
+          check {concatLists(x:: (xs ++ l2), l3).content == (prependToAll(x, l3) ++ concatLists(xs ++ l2,l3)).content /*because {clInductLeft(x,xs++l2,l3)}*/} &&
+          check {(prependToAll(x, l3) ++ concatLists(xs ++ l2,l3)).content == (prependToAll(x, l3) ++ (concatLists(xs ,l3) ++ concatLists(l2,l3))).content because {check{xs.size < l1.size} && clLeftDistributiveAppendHelper(xs,l2,l3)}} &&
           check {(prependToAll(x, l3) ++ (concatLists(xs ,l3) ++ concatLists(l2,l3))).content == ((prependToAll(x, l3) ++ concatLists(xs ,l3)) ++ concatLists(l2,l3)).content because{ListSpecs.appendAssoc(prependToAll(x, l3), concatLists(xs ,l3), concatLists(l2,l3))}} &&
           check {((prependToAll(x, l3) ++ concatLists(xs ,l3)) ++ concatLists(l2,l3)).content == (concatLists(x::xs ,l3) ++ concatLists(l2,l3)).content because {clInductLeft(x,xs,l3)}}
         }
