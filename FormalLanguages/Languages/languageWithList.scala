@@ -50,19 +50,40 @@ case class Lang[T](list: List[List[T]]) {
 
   def contains(word: List[T]): Boolean = list.contains(word)
 
-  def ^ (i: BigInt): Lang[T] = i match {
-    case BigInt(0) => Lang[T](List(Nil()))
-    case _ => this concat (this ^ (i-1))
+  /*def power (i: Int): Lang[T] = {
+    require(i >= BigInt(0))
+    decreases(i)
+    i match {
+      case 0 => Lang[T](List(Nil()))
+      case _ => this concat (this power (i-1))
+    }
+  }*/
+
+  def ^ (i: BigInt): Lang[T] = {
+    require(i >= BigInt(0))
+    decreases(i)
+    i match {
+      case BigInt(0) => Lang[T](List(Nil()))
+      case _ => this concat (this ^ (i-1))
+    }
   }
 
-  def close(i: BigInt): Lang[T] = i match {
-    case BigInt(0) => this ^ i
-    case _ => (this close (i-1)) ++ (this ^ i)
+  def close(i: BigInt): Lang[T] = {
+    require(i >= BigInt(0))
+    decreases(i)
+    i match {
+      case BigInt(0) => this ^ i
+      case _ => (this close (i-1)) ++ (this ^ i)
+    }
   }
 
-  def :^ (i: BigInt): Lang[T] = i match {
-    case BigInt(0) => Lang[T](List(Nil()))
-    case _ =>  (this ^ (i-1)) concat this
+  def :^ (i: BigInt): Lang[T] = {
+    require(i >= BigInt(0))
+    decreases(i)
+    i match {
+      case BigInt(0) => Lang[T](List(Nil()))
+      case _ =>  (this ^ (i-1)) concat this
+    }
   }
 
 }
@@ -132,6 +153,12 @@ object LangSpecs {
     }
   }.holds
 
+  def concatDistributiveAppendLeft[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    ((l1 ++ l2) concat l3) sameAs ((l1 concat l3) ++ (l2 concat l3)) because {
+      clLeftDistributiveAppend(l1.list,l2.list,l3.list)
+    }
+  }.holds
+
   def concatSameAs[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
     require(l1 sameAs l2)
     (l1 concat l3) sameAs (l2 concat l3) because {
@@ -147,6 +174,8 @@ object LangSpecs {
   }.holds
 
   def couldHaveDefinedOtherWay[T](l: Lang[T], i: BigInt): Boolean = {
+    require(i >= BigInt(0))
+    decreases(i)
     (l ^ i) sameAs (l :^i) because {
       i match {
         case BigInt(0) => check{(l^0) sameAs (l:^0)}
@@ -173,6 +202,7 @@ object LangSpecs {
   }.holds
 
   def nullLangClose[T](n: BigInt): Boolean = {
+    require(n >= BigInt(0))
     (nullLang() close n) sameAs unitLang() because {
       n match {
         case BigInt(0) => check{(nullLang() close 0) == unitLang()}
@@ -187,6 +217,7 @@ object LangSpecs {
   }.holds
 
   def unitLangPow[T](n: BigInt): Boolean = {
+    require(n >= BigInt(0))
     (unitLang() ^ n) sameAs unitLang() because {
       n match {
         case BigInt(0) => true
@@ -201,6 +232,7 @@ object LangSpecs {
   }.holds
 
   def unitLangClose[T](n: BigInt): Boolean = {
+    require(n >= BigInt(0))
     (unitLang() close n) sameAs unitLang() because {
       n match {
         case BigInt(0) => check{(unitLang() close 0) sameAs unitLang()}
@@ -248,8 +280,13 @@ object LangSpecs {
     (l1 subsetOf l2) ==> (l2 sameAs (l1 ++ (l2 -- l1)))
   }.holds
 
-  /*def concatSubset[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
-    (l1 subsetOf l2) ==> ( (l1 concat l3) subsetOf (l2 concat l3) )
-  }.holds*/
+  def concatSubset[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    (l1 subsetOf l2) ==> ( (l1 concat l3) subsetOf (l2 concat l3) because {
+      check {(l2 sameAs (l1 ++ (l2 -- l1)))} &&
+      check {((l1 concat l3) subsetOf (l2 concat l3)) == ((l1 concat l3) subsetOf ((l1 ++ (l2 -- l1)) concat l3)) because {concatSameAs(l2,l1 ++ (l2 -- l1),l3)}} &&
+      check {((l1 concat l3) subsetOf ((l1 ++ (l2 -- l1)) concat l3)) == ((l1 concat l3) subsetOf ((l1 concat l3) ++ ((l2 -- l1) concat l3))) because {concatDistributiveAppendLeft(l1, l2--l1, l3)}} &&
+      check {((l1 concat l3) subsetOf ((l1 concat l3) ++ ((l2 -- l1) concat l3))) == true}
+    })
+  }.holds
 
 }
