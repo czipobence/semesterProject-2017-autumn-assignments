@@ -445,17 +445,15 @@ object ConcatListsSpecs {
     }
   }.holds
 
-  def clLeftDistributiveAppendHelper[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
-    decreases(l1.size)
-    concatLists(l1 ++ l2, l3).content == (concatLists(l1,l3) ++ concatLists(l2,l3)).content because {
-      l1 match {
+  def clRightDistributiveAppend[T](l1: List[List[T]], l2: List[List[T]], l3: List[List[T]]): Boolean = {
+    concatLists(l1, l2++l3).content == (concatLists(l1, l2) ++ concatLists(l1,l3)).content because {
+      l2 match {
         case Nil() => true
-        case x :: xs => {
-          check {concatLists((x::xs) ++ l2, l3).content == concatLists(x:: (xs ++ l2), l3).content} &&
-          check {concatLists(x:: (xs ++ l2), l3).content == (prependToAll(x, l3) ++ concatLists(xs ++ l2,l3)).content /*because {clInductLeft(x,xs++l2,l3)}*/} &&
-          check {(prependToAll(x, l3) ++ concatLists(xs ++ l2,l3)).content == (prependToAll(x, l3) ++ (concatLists(xs ,l3) ++ concatLists(l2,l3))).content because {check{xs.size < l1.size} && clLeftDistributiveAppendHelper(xs,l2,l3)}} &&
-          check {(prependToAll(x, l3) ++ (concatLists(xs ,l3) ++ concatLists(l2,l3))).content == ((prependToAll(x, l3) ++ concatLists(xs ,l3)) ++ concatLists(l2,l3)).content because{ListSpecs.appendAssoc(prependToAll(x, l3), concatLists(xs ,l3), concatLists(l2,l3))}} &&
-          check {((prependToAll(x, l3) ++ concatLists(xs ,l3)) ++ concatLists(l2,l3)).content == (concatLists(x::xs ,l3) ++ concatLists(l2,l3)).content because {clInductLeft(x,xs,l3)}}
+        case x :: xs =>  {
+          check {concatLists(l1, (x::xs)++l3).content == ((appendToAll(l1, x).content) ++ (concatLists(l1, (xs++l3))).content)}
+          check {((concatLists(l1, (xs++l3))).content) == (concatLists(l1, xs) ++ concatLists(l1,l3)).content because {clRightDistributiveAppend(l1,xs,l3)}}
+          check {((appendToAll(l1, x).content) ++ (concatLists(l1, (xs++l3))).content) == ((appendToAll(l1, x).content) ++ (concatLists(l1, xs) ++ concatLists(l1,l3)).content) because {clRightDistributiveAppend(l1,xs,l3)}} &&
+          check {((appendToAll(l1, x).content) ++ (concatLists(l1, xs) ++ concatLists(l1,l3)).content) == (concatLists(l1, x::xs) ++ concatLists(l1,l3)).content}
         }
       }
     }

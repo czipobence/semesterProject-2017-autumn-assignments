@@ -159,6 +159,13 @@ object LangSpecs {
     }
   }.holds
 
+
+  def concatDistributiveAppendRight[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    (l1 concat (l2 ++ l3)) sameAs ((l1 concat l2) ++ (l1 concat l3)) because {
+      clRightDistributiveAppend(l1.list,l2.list,l3.list)
+    }
+  }.holds
+
   def concatSameAs[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
     require(l1 sameAs l2)
     (l1 concat l3) sameAs (l2 concat l3) because {
@@ -201,6 +208,27 @@ object LangSpecs {
     }
   }.holds
 
+  def powSum[T](l: Lang[T], p1: BigInt, p2: BigInt): Boolean = {
+    require(p1 >= BigInt(0) && p2 >= BigInt(0))
+    decreases(p1)
+    (l ^ (p1 + p2)) sameAs (l ^ p1 concat l ^ p2) because {
+      p1 match {
+        case BigInt(0) => {
+          check {(l ^ (0 + p2)) sameAs (l ^ (p2))} &&
+          check {(l ^ (p2)) sameAs (unitLang() concat (l ^ (p2))) because {leftUnitConcat((l ^ (p2)))}} &&
+          check {(unitLang() concat (l ^ (p2))) sameAs ((l ^ BigInt(0)) concat (l ^ (p2))) because{concatSameAs(unitLang(),l ^ BigInt(0), l ^ (p2))}}
+        }
+        case _ => {
+          check {(l ^ (p1 + p2)) sameAs (l concat (l ^ ((p1 + p2) - 1)))} &&
+          check {(l concat (l ^ ((p1 + p2) - 1))) sameAs (l concat (l ^ ((p1 - 1) + p2)))} &&
+          check {(l concat (l ^ ((p1 - 1) + p2))) sameAs (l concat ((l ^ (p1 - 1) ) concat (l ^ p2) )) because {powSum(l, p1-BigInt(1), p2)} && concatSameAs2(l, (l ^ ((p1 - 1) + p2)), ((l ^ (p1 - 1) ) concat (l ^ p2) ))} &&
+          check {(l concat ((l ^ (p1 - 1) ) concat (l ^ p2) )) sameAs ((l concat (l ^ (p1 - 1) )) concat (l ^ p2)) because {associativity(l,l ^ (p1 - BigInt(1)),l ^ p2)}} &&
+          check {((l concat (l ^ (p1 - 1) )) concat (l ^ p2)) sameAs ( (l ^ p1 ) concat (l ^ p2))}
+        }
+      }
+    }
+  }.holds
+
   def nullLangClose[T](n: BigInt): Boolean = {
     require(n >= BigInt(0))
     (nullLang() close n) sameAs unitLang() because {
@@ -228,6 +256,14 @@ object LangSpecs {
           check{(unitLang ^ (n-1)) sameAs (unitLang()) because {unitLangPow(n-1)}}
         }
       }
+    }
+  }.holds
+
+  def langToFirst[T](l: Lang[T]): Boolean = {
+    (l ^ BigInt(1)) sameAs l because {
+      check {(l ^ BigInt(1)) sameAs (l concat (l ^ BigInt(0)))} &&
+      check {(l concat (l ^ BigInt(0))) sameAs (l concat (Lang[T](List(Nil()))))} &&
+      check {(l concat (Lang[T](List(Nil())))) sameAs l because {rightUnitConcat(l)}}
     }
   }.holds
 
@@ -276,16 +312,93 @@ object LangSpecs {
     ((l1 subsetOf l2) && (l2 sameAs l3)) ==> (l1 subsetOf l3)
   }.holds
 
+  def sameAsSubsetTrans2[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    ((l1 sameAs l2) && (l2 subsetOf l3)) ==> (l1 subsetOf l3)
+  }.holds
+
   def subsetSplit[T](l1: Lang[T], l2: Lang[T]): Boolean = {
     (l1 subsetOf l2) ==> (l2 sameAs (l1 ++ (l2 -- l1)))
+  }.holds
+
+  def subsetSupersetSame[T](l1: Lang[T], l2: Lang[T]): Boolean = {
+    ((l1 subsetOf l2) && (l2 subsetOf l1)) ==> (l1 sameAs l2)
+  }.holds
+
+  def powConcClose[T](l: Lang[T], p1: BigInt, p2: BigInt): Boolean = {
+    require((p1 >= BigInt(0)) && (p2 >= BigInt(0)) )
+    decreases(p2)
+    ((l ^ p1) concat (l close p2)) subsetOf (l close (p1 + p2)) because {
+      p2 match {
+        case BigInt(0) => {
+          check{((l ^ p1) concat (l close BigInt(0))) sameAs ((l ^ p1) concat unitLang())} &&
+          check{((l ^ p1) concat unitLang()) sameAs (l ^ p1) because {rightUnitConcat(l ^ p1)}} &&
+          check{(l ^ p1) subsetOf (l close p1)} &&
+          check{(l close p1) sameAs (l close (p1 + BigInt(0)))}
+        }
+        case _ => {
+          check {((l ^ p1) concat (l close p2)) sameAs ((l ^ p1) concat ((l close (p2-1)) ++ (l ^ p2))) because {
+            check {p2 > BigInt(0)}
+            check{(l close p2) sameAs ((l close (p2-1)) ++ (l ^ p2))} &&
+            concatSameAs2((l ^ p1), (l close p2), (l close (p2-1)) ++ (l ^ p2))
+          }} &&
+          check {((l ^ p1) concat ((l close (p2-1)) ++ (l ^ p2))) sameAs (((l ^ p1) concat (l close (p2-1))) ++ ((l ^ p1) concat (l ^ p2))) because {concatDistributiveAppendRight(l ^ p1, l close (p2 -1), l^p2)}} &&
+          check {(((l ^ p1) concat (l close (p2-1))) ++ ((l ^ p1) concat (l ^ p2))) sameAs (((l ^ p1) concat (l close (p2-1))) ++ (l ^ (p1+p2))) because {powSum(l, p1,p2)}} &&
+          check {(((l ^ p1) concat (l close (p2-1))) ++ (l ^ (p1+p2))) subsetOf ((l close (p1 + p2-1)) ++ (l ^ (p1+p2))) because {powConcClose(l,p1,p2-1)}} &&
+          check {((l close (p1 + p2-1)) ++ (l ^ (p1+p2))) sameAs (l close (p1 + p2))}
+        }
+      }
+    }
+  }.holds
+
+  //actualy, much more than that is true, but it is enough for a start
+  //(l close p1 ) concat (l close p2) sameAs l close (p1+p2)
+  def sumClose[T](l: Lang[T], p1: BigInt, p2: BigInt): Boolean = {
+    require((p1 >= BigInt(0)) && (p2 >= BigInt(0)) )
+    //decreases(p1)
+    ((l close p1) concat (l close p2)) subsetOf (l close (p1 + p2)) because {
+      p1 match {
+        case BigInt(0) => {
+          check {((l close BigInt(0)) concat (l close p2)) sameAs (unitLang() concat (l close p2))} &&
+          check {(unitLang() concat (l close p2)) sameAs (l close p2) because {leftUnitConcat(l close p2)}} &&
+          check {(l close p2) sameAs (l close (BigInt(0) + p2))}
+        }
+        case _ => {
+          check {((l close p1) concat (l close p2)) sameAs (((l close (p1-1)) ++ (l ^ p1)) concat (l close p2))} &&
+          check {(((l close (p1-1)) ++ (l ^ p1)) concat (l close p2)) sameAs (((l close (p1-1)) concat (l close p2)) ++ ((l ^ p1) concat (l close p2))) because {concatDistributiveAppendLeft((l close (p1-1)), l^p1, l close p2)}} &&
+          check {(((l close (p1-1)) concat (l close p2)) ++ ((l ^ p1) concat (l close p2))) subsetOf ((l close ((p1-1) + p2)) ++ ((l ^ p1) concat (l close p2))) because {sumClose(l, p1-1, p2)}} &&
+          check {((l close ((p1-1) + p2)) ++ ((l ^ p1) concat (l close p2))) subsetOf ((l close ((p1-1) + p2)) ++ (l close (p1+p2))) because {powConcClose(l, p1, p2)}} &&
+          check {((l close ((p1-1) + p2)) ++ (l close (p1+p2))) subsetOf (l close (p1+p2))}
+        }
+      }
+    }
+  }.holds
+
+  def subsetCloseLe[T](l1: Lang[T], p1: BigInt, p2: BigInt): Boolean = {
+    require((p1 <= p2) && (p1 >= BigInt(0)) && (p2 >= BigInt(0)) )
+    (l1 close p1) subsetOf (l1 close p2) because {
+      if (p1 == p2) true
+      else {
+        check {(l1 close p2) sameAs ((l1 close (p2-1)) ++ (l1 ^ p2))} &&
+        check {(l1 close p1) subsetOf ((l1 close (p2-1))) because {subsetCloseLe(l1,p1,p2-1)}}
+      }
+    }
   }.holds
 
   def concatSubset[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
     (l1 subsetOf l2) ==> ( (l1 concat l3) subsetOf (l2 concat l3) because {
       check {(l2 sameAs (l1 ++ (l2 -- l1)))} &&
-      check {((l1 concat l3) subsetOf (l2 concat l3)) == ((l1 concat l3) subsetOf ((l1 ++ (l2 -- l1)) concat l3)) because {concatSameAs(l2,l1 ++ (l2 -- l1),l3)}} &&
-      check {((l1 concat l3) subsetOf ((l1 ++ (l2 -- l1)) concat l3)) == ((l1 concat l3) subsetOf ((l1 concat l3) ++ ((l2 -- l1) concat l3))) because {concatDistributiveAppendLeft(l1, l2--l1, l3)}} &&
-      check {((l1 concat l3) subsetOf ((l1 concat l3) ++ ((l2 -- l1) concat l3))) == true}
+      check { (l2 concat l3) sameAs ((l1 ++ (l2 -- l1)) concat l3) because {concatSameAs(l2,l1 ++ (l2 -- l1),l3)}} &&
+      check {((l1 ++ (l2 -- l1)) concat l3) sameAs ((l1 concat l3) ++ ((l2 -- l1) concat l3)) because {concatDistributiveAppendLeft(l1, l2--l1, l3)}} &&
+      check {(l1 concat l3) subsetOf ((l1 concat l3) ++ ((l2 -- l1) concat l3))}
+    })
+  }.holds
+
+  def concatSubset2[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    (l2 subsetOf l3) ==> ( (l1 concat l2) subsetOf (l1 concat l3) because {
+      check {l3 sameAs (l2 ++ (l3 -- l2))} &&
+      check { (l1 concat l2) subsetOf ((l1 concat l2) ++ (l1 concat (l3 -- l2))) } &&
+      check {((l1 concat l2) ++ (l1 concat (l3 -- l2))) sameAs (l1 concat (l2 ++ (l3 -- l2))) because {concatDistributiveAppendRight(l1, l2, l3--l2)}} &&
+      check {(l1 concat (l2 ++ (l3 -- l2))) sameAs (l1 concat l3) because {concatSameAs2(l1, l2++(l3 -- l2), l3)}}
     })
   }.holds
 
