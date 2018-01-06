@@ -1,0 +1,35 @@
+We define three operations on two languages (L1, L2).
+
+Operations are:
+	- Union(L1: Lang, L2:Lang): take the union of two langauges
+	- Conc(L1: Lang, L2:Lang): concatenate two langauges
+	- Power(L: Lang, n: BigInt): take the language to the n'th power
+
+We can construct RegExpr-es out of them:
+
+method f of regExes: (Lang,Lang) => Lang
+
+L1:	f(l1,l2) = l1
+L2:	f(l1,l2) = l2
+Union:	f(l1,l2) = left.f(l1,l2) ++ right.f(l1++l2)
+Conc:	f(l1,l2) = left.f(l1,l2) concat right.f(l1,l2)
+Power:	f(l1,l2) = expr.f(l1,l2) ^ pow
+
+evalExpo fuction to get the exponent
+
+L1:	exalExpo() = 1
+L2:	evalExpo() = 1
+Union:	evalExpo() = max(left.evalExpo(), right.evalExpo())
+Conc:	evalExpo() = left.evalExpo() concat right.evalExpo()
+Power	evalExpo() = expo.evalExpo() * pow
+
+We would like to prove that all these langauges are in (L1 union L2)^*
+We can prove that by showing the constucted operation is in (L1 union L2)^n for some n.
+
+We define two functions:
+eval: (RegExpr, Lang, Lang): Lang       // creates a language from a regex using two parameter languages
+evvalExpo RegExpr: BingInt		// decides n for a RegExpr r such that eval(r,L1,L2) subseteq(L1 union L2)
+
+eval(r,L1,L2) suseteq (L1 union L2) ^^ n == (L1 union L2) ^ 0 + (L1 union L2) ^ 1 + ... + (L1 union L2) ^ n
+
+state as a postcondition
