@@ -3,12 +3,17 @@ import stainless.collection._
 import stainless.proof._
 import stainless.annotation._
 
+//Regex expressions and proofs about them
+
 // we rely on lang
 import Lang._
 import LangSpecs._
 
 sealed abstract class RegEx {
+  //evaluate the regular expression to a language
   def eval[T](l1: Lang[T], l2: Lang[T]): Lang[T]
+
+  //find a suitable n:BigInt such that (L1 ++ L2) ^ n is a superset of the evaluation of the regex
   def evalExp(): BigInt
 }
 
@@ -38,39 +43,42 @@ case class Conc(left: RegEx, right: RegEx) extends RegEx {
   override def evalExp(): BigInt = left.evalExp() + right.evalExp()
 }
 
+//This case is not crucial, as Pow(r,n) = Conc(r, pow(r, n-1))
+/*
 case class Pow(expr: RegEx, pow: BigInt) extends RegEx {
   require(pow >= BigInt(0))
   override def eval[T](l1: Lang[T], l2: Lang[T]): Lang[T] = (expr.eval(l1, l2) ^ pow)
   override def evalExp(): BigInt = (expr.evalExp() * pow)
-}
+}*/
 
 object RegExSpecs {
 
+  //proof that the exponent is always positive
   def evalExpPositive(expr: RegEx): Boolean = {
     expr.evalExp() >= BigInt(0) because {
       expr match {
         case L1() => check{L1().evalExp == BigInt(1)}
         case L2() => check{L2().evalExp == BigInt(1)}
         case Union(left, right) => {
-          //why?
+          //for some reason stainless found them as counterexample if they are not checked
           check {Union(L1(),L1()).evalExp() == BigInt(1)} &&
           check {Union(L2(),L2()).evalExp() == BigInt(1)} &&
           check {left.evalExp() >= BigInt(0) because evalExpPositive(left)} &&
           check {right.evalExp() >= BigInt(0) because evalExpPositive(right)}
         }
         case Conc(left, right) => {
-            //WHY?
+          //for some reason stainless found them as counterexample if they are not checked
             check {Conc(L1(),L1()).evalExp() == BigInt(2)} &&
             check {Conc(L2(),L2()).evalExp() == BigInt(2)} &&
             check {left.evalExp() >= BigInt(0) because evalExpPositive(left)} &&
             check {right.evalExp() >= BigInt(0) because evalExpPositive(right)}
         }
-        case Pow(e, p) => {
-            //W.H.Y???
+        /*case Pow(e, p) => {
+            //for some reason stainless found them as counterexample if they are not checked
             check {Pow(L1(),BigInt(0)).evalExp() == BigInt(0)} &&
             check {e.evalExp() >= BigInt(0) because evalExpPositive(e)} &&
             check {p >= BigInt(0)}
-        }
+        }*/
       }
     }
   }.holds
@@ -99,7 +107,7 @@ object RegExSpecs {
           }}
         }
         case Union(left, right) => {
-          check {expr.eval(l1, l2) == (left.eval(l1, l2) ++ right.eval(l1, l2))} &&
+          check {expr.eval(l1, l2) == (left.eval(l1, l2) ++ right.eval(l1, l2))} && //this step fails
           check {(expr.eval(l1, l2) subsetOf ((l1 ++ l2) close expr.evalExp())) == ((left.eval(l1, l2) ++ right.eval(l1, l2)) subsetOf ((l1 ++ l2) close expr.evalExp()))} &&
           check {((left.eval(l1, l2) ++ right.eval(l1, l2)) subsetOf ((l1 ++ l2) close expr.evalExp())) == ((left.eval(l1, l2) ++ right.eval(l1, l2)) subsetOf ((l1 ++ l2) close max(left.evalExp(), right.evalExp())))} &&
           check {((left.eval(l1, l2) ++ right.eval(l1, l2)) subsetOf ((l1 ++ l2) close max(left.evalExp(), right.evalExp()))) == (( (left.eval(l1, l2) subsetOf ((l1++l2) close max(left.evalExp(), right.evalExp())) ) && (right.eval(l1, l2) subsetOf ((l1++l2) close max(left.evalExp(), right.evalExp())) ) ))} &&
@@ -130,7 +138,7 @@ object RegExSpecs {
           check {expr.eval(l1, l2) subsetOf ((l1 ++ l2) close expr.evalExp())}
         }
         case Conc(left, right) => {
-          check {(expr.eval(l1, l2) subsetOf ((l1 ++ l2) close expr.evalExp())) == ((left.eval(l1, l2) concat right.eval(l1, l2)) subsetOf ((l1 ++ l2) close expr.evalExp()))} &&
+          check {(expr.eval(l1, l2) subsetOf ((l1 ++ l2) close expr.evalExp())) == ((left.eval(l1, l2) concat right.eval(l1, l2)) subsetOf ((l1 ++ l2) close expr.evalExp()))} && //this step fails
           check {((left.eval(l1, l2) concat right.eval(l1, l2)) subsetOf ((l1 ++ l2) close expr.evalExp())) == ((left.eval(l1, l2) concat right.eval(l1, l2)) subsetOf ((l1 ++ l2) close (left.evalExp() + right.evalExp())))}
           check {((left.eval(l1, l2) concat right.eval(l1, l2)) subsetOf ((l1 ++ l2) close (left.evalExp() + right.evalExp()))) because {
             check {(left.eval(l1, l2) concat right.eval(l1, l2)) subsetOf (((l1++l2) close (left.evalExp())) concat right.eval(l1, l2)) because {
