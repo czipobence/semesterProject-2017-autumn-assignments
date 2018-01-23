@@ -1,0 +1,181 @@
+\section{Implementation}
+
+In order to verify theorems about languages in Stainless, they have to be implemented in Scala. 
+
+This section first introduces a way to represent symbols and words in Stainless. Later, I present and compare different approaches to implement languages. They can be represented in various ways, in this work I highlight three of them.
+
+\begin{enumerate}
+	\item Languages are set of words, so they can be represented through a Set of List of T-s.
+	\item Languages can be represented as a unique List of List of T-s.
+	\item They can also be represented with a function, that maps List[T]-s to boolean values, true if the word is in the language and false otherwise
+\end{enumerate}
+
+Note that in order to be able to efficiently verify theorems in Stainless, we have to use the collection implementations of Stainless that are located in the packages \inline{stainless.lang} and \inline{stainless.collection}. From now on, whenever Set or List are mentioned, they refer to \inline{stainless.lang.Set} and \inline{stainless.collection.List}.
+
+\subsection{Representing Symbols and Words}
+
+
+In languages, symbols are frequently characters, however, by definition they can be any type, so they are represented as generic type \inline{T}. Words are ordered, not unique collections of symbols, thus they are represented as a \inline{List[T]}. With the usage of Lists, the other operation intuitively come:
+
+\begin{itemize}
+	\item $\emptyword$ can be represented as \inline{Nil[T]},
+	\item $\lenghtfunc{\wordsymbol}$ can be represented as \inline{w.size}
+	\item indexing can be represented using the indexing operator of lists,
+	\item range indexing can be implemented combining \inline{take} and \inline{drop}
+	\item concatenation of words $\wordi{1}$ and $\wordi{2}$ can be expressed as \inline{w1 ++ w2}
+\end{itemize}
+
+
+\subsection{Representing Languages with Set}
+
+Languages are set of words, so using Set of words seems to be the most convenient way to represent them.
+
+
+\begin{Code}{Stainless}{}{Sketch of a class representing Languages using sets}
+case class Lang[T](set: Set[List[T]]) {	
+  
+  def concat(that: Lang[T]): Lang[T] = ???
+  
+  def ++(that: Lang[T]):Lang[T] = Lang[T](this.set ++ that.set)
+  
+  def contains(word: List[T]): Boolean = set.contains(word)
+  
+  [...]
+  
+}
+\end{Code}
+
+This way, all basic set operations can be implemented by calling the corresponding method of Set. Moreover, uniqueness is also ensured, because the used data structure ensures it.
+
+The drawback of this solution is that Set does not have any functions that allows us to iterate through its elements.
+
+\subsection{Representing Languages with Lists}
+\label{set:implList}
+
+To overcome that, we can represent languages with unique lists, as sketched in Listing~\ref{lst:langWithSet}.
+
+\begin{Code}{Stainless}{lst:langWithSet}{Implementing Languages using sets}
+case class Lang[T](list: List[List[T]]) {
+
+  def appendToAll( l: List[List[T]], 
+                   suffix: List[T] ):List[List[T]] = l match {
+    case Nil() => Nil[List[T]]()
+    case Cons(x,xs) => (x ++ suffix)::appendToAll(xs, suffix)
+  }
+
+  def concatLists(
+          l1: List[List[T]],
+          l2: List[List[T]]):  List[List[T]] = l2 match {
+    case Nil() => Nil[List[T]]()
+    case Cons(x,xs) => appendToAll(l1,x)++combineLists(l1,xs)
+  }
+		
+  def concat(that: Lang[T]): Lang[T] = {
+    Lang[T](concatLists(this.list, that.list))
+  }
+  
+  def ++(that: Lang[T]): Lang[T] = (
+    Lang[T](this.list ++ that.list)
+  )
+	
+  def == (that: Lang[T]): Boolean = {
+    this.list.content == that.list.content
+  }
+	
+  def contains(word: List[T]): Boolean = list.contains(word)
+  
+  [...]
+  
+}
+\end{Code}
+
+This implementation has the advantage that items can be iterated through (e.g. applying structural induction on the list), however, in this case we have to deal with the issue that words in languages can have arbitrary order. Moreover, with list operations, uniqueness is not ensured. This can be worked around two ways:
+\begin{enumerate}
+	\item For each operation we require the input lists to have unique words in a total order, and with our implementation we ensure that the resulting lists will also be unique, and its words will follow the same total order.
+	
+	\item We state our theorems not for the list, but for their content, which has the type Set. This way, uniqueness in ensured, and the order of items does not matter any more. The big advantage of this approach is that if two lists are equal (structurally) their contents are also equal. This means that sometimes it can be enough to prove a stricter, but more easily provable theorem.
+\end{enumerate}
+
+The implementation sketch for the second approach is presented in ~Listing~\ref{lst:langWithSet} uses the second approach.
+
+\subsection{Representing Languages with Functions}
+
+The third approach is to represent a language with a function, that maps words (lists of symbols) to boolean values. For each language $\languagesymbol \in \alphabetpow{*}$ we can define a function $\languagefunci{}$ such that a word $\wordsymbol$ over $\alphabet$
+
+$
+\languagefunci{}(\wordsymbol)= 
+\begin{cases}
+\text{true}& \text{if } \wordsymbol \in \languagesymbol\\
+\text{false}              & \text{otherwise}
+\end{cases}
+$
+
+One of the challenges with this implementation that the set operations are not always trivial. To define the combination of $\languagei{1}$ and $\languagei{2}$, we have to define a function $\languagefunc{\languagei{1} \concatop \languagei{2}}$. One definition for such function is the following: $\languagefunc{\languagei{1} \concatop \languagei{2}}(\wordsymbol) = \exists i \in 0..\text{len}(\wordsymbol). ~ \wordsymbol[:i-1] \in \languagei{1} \wedge \wordsymbol[i:] \in \languagei{2} $, informally, this means that the word can be split into two parts, such that the first part is in $\languagei{1}$ and the second is in $\languagei{2}$.
+
+The sketch for such implementation is presented in Listing~\ref{lst:langWithFunc}.
+
+\begin{Code}{Stainless}{lst:langWithFunc}{Implementing languages using functions}
+case class Lang[T](f: List[T] => Boolean) {
+	
+  def concat(that: Lang[T]): Lang[T] = {
+    Lang[T](l => !forall( (i: BigInt) => !(
+      i <= l.size &&
+      i >= 0 &&
+      this.contains(l.take(i)) &&
+      that.contains(l.drop(i))
+    )))
+  }
+  
+  def ++(that: Lang[T]): Lang[T] = {
+    Lang[T](w => this.f(w) || that.f(w))
+  }
+
+  def == (that: Lang[T]): Boolean = {
+    forall((x:List[T]) => contains(x) ==> that.contains(x)) &&
+    forall((x:List[T]) => that.contains(x) ==> contains(x))
+  }
+
+  def contains(word: List[T]): Boolean = f(word)
+}
+\end{Code}
+
+
+
+Note that due to the current limitations of the Stainless framework, instead of $\exists$ we have to use $\forall$, applying the fact that for a predicate $p$ we have $\exists(p) = ! \forall(!p)$
+
+\subsection{Comparison}
+\label{sect:impl.comp}
+The comparison of different ways of implementation can be found in Table~\ref{tab:implComparison}.
+
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+	\begin{table}
+		%\label{tab:implComparison}
+		\begin{tabular}{| p{3cm} | p{3cm} | p{3cm}| p{3cm} | p{3cm} |}
+			
+			\hline
+			& Sets & Lists (unique and ordered) & Lists (content) & Functions \\ \hline
+			Unique & Yes & Yes & No & Yes \\ \hline
+			Iterable (structural induction) & No & Yes & Yes & No \\ \hline
+			Can express infinite languages & No & No & No & Yes \\ \hline
+			Equality of languages & Trivial & Content equality & Content equality & Complex, $\forall$ expressions \\ \hline
+			Concatenation of languages & Complex (no structural induction on sets) & Structural induction applied twice (combination will be unique) & Structural induction applied twice & Complex \\ \hline
+			Word containment & Trivial & Trivial & Trivial & Trivial \\ \hline
+			Set operations ($\cup, ~ \cap, \ldots$) & Trivial & Uniqueness has to be ensured & Trivial & Trivial \\ \hline
+			Phrasing theorems and lemmas & Trivial & Trivial & Theorems about content of list & Trivial \\ \hline
+		\end{tabular}		
+		\caption{\label{tab:implComparison}Comparison of different ways of implementation}
+	\end{table}
+
+\end{center}
+
+For my work, I selected the non-unique/ordered list representation of languages. The core motivation behind that decision was that this way languages can be iterated using structural induction, even though this way theorems get a bit more complicated than in the other cases. The other main reason for that was that this way, the words are not required to have a total order, unlike the unique and ordered case.
+
+\subsection{Regular Expressions}
+\label{sect:regExImpl}
+
+In the implementation of regular expressions I differed from their original definition. For sake of simplicity lets restrict them to allow only two constants to appear in the regular expressions, but they can be any language $\languagei{1}, \languagei{2}$. Let the set of such regular expression be denoted by $\regexsetl$.
+
+Constants and operations are defined as case classes. \inline{L1} and \inline{L2} has no arguments, \inline{Union} and \inline{Concat} take two regular expressions, whereas \inline{Pow} (that replaces the star in the implementation) takes a regular expression and a natural number.
+
+The regular expression implementation has a method \\ \inline{eval(l1: Lang[T], l2: Lang[T]): Lang[T]} that takes two languages as parameters and evaluates the value of the regular expression with respect to it.

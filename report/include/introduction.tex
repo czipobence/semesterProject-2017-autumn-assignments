@@ -1,0 +1,125 @@
+\section{Introduction}
+
+\newcommand{\alphabetSymbol}{A}
+\newcommand{\alphabet}{\alphabetSymbol}
+\newcommand{\alphabetpow}[1]{\alphabetSymbol^{#1}}
+
+\newcommand{\languagesymbol}{L}
+\newcommand{\languagei}[1]{\languagesymbol_{#1}}
+
+\newcommand{\pow}[2]{#1^{#2}}
+\newcommand{\close}[2]{\pow{#1}{(#2)}}
+
+\newcommand{\languagepow}[1]{\pow{\languagesymbol}{#1}}
+\newcommand{\languageclose}[1]{\close{\languagesymbol}{#1}}
+
+
+
+\newcommand{\wordsymbol}{w}
+\newcommand{\wordi}[1]{\wordsymbol_{#1}}
+\newcommand{\emptyword}{\epsilon}
+
+\newcommand{\lenghtfunc}[1]{\text{len}(#1)}
+
+\newcommand{\concatop}{\cdot}
+
+\newcommand{\suchthat}{~ | ~}
+
+\newcommand{\languagefunctionsym}{f}
+\newcommand{\languagefunc}[1]{\languagefunctionsym_{#1}}
+\newcommand{\languagefunci}[1]{\languagefunctionsym_{\languagei{#1}}}
+
+
+\newcommand{\emptylist}{[\emptyset]}
+\newcommand{\unitlist}{[\emptyword]}
+\newcommand{\unitlang}{\{\emptyword\}}
+
+\newcommand{\setof}[1]{\{#1\}}
+
+\newcommand{\nats}{\mathbb{N}}
+\newcommand{\ints}{\mathbb{Z}}
+\newcommand{\reals}{\mathbb{R}}
+
+\newcommand{\regex}{r}
+\newcommand{\regexsetsym}{R}
+\newcommand{\regexsetl}{\regexsetsym_{\languagei{1}, \languagei{2}}}
+
+Formal languages are abstract mathematical structures, sets of string generated from a finite alphabet. 
+
+\begin{definition}[Alphabet]
+	An \emph{alphabet} \alphabet{} is a finite set of symbols $\{a_1, a_2, a_3, \ldots a_n\}$
+\end{definition}
+
+\subsection{Words}
+
+\begin{definition}[Words]
+	A \emph{string} (or \emph{word}) is a sequence of symbols. The length of a word is the number of symbols in the sequence.
+\end{definition}
+
+For words, we can define the following operations.
+
+\begin{itemize}
+	\item \textbf{Length:} Let $\lenghtfunc{\wordsymbol}$ denote the number of characters in $\wordsymbol$.
+	\item \textbf{Indexing:} For a word $\wordsymbol$ and an integer $i \in 0.. \lenghtfunc{\wordsymbol}-1$ $\wordsymbol[i]$ denote the i'th character of $\wordsymbol$ (starting from 0).
+	\item \textbf{Range indexing:} For a word $\wordsymbol$ let $\wordsymbol[i:j]$ denote a word such that $\lenghtfunc{\wordsymbol[j:i]} = j-i+1$ $\wordsymbol[i:j][0] = \wordsymbol[i], \wordsymbol[i:j][1] = \wordsymbol[i+1], \ldots \wordsymbol[i:j][j-i] = \wordsymbol[j]$. For notation, lets define $\wordsymbol[:i] = \wordsymbol[0:i]$ and $\wordsymbol[i:]$ as $\wordsymbol[i: \lenghtfunc{\wordsymbol} -1]$.
+	\item \textbf{Concatenation:} Let $\wordi{c} = \wordi{1} \concatop \wordi{2}$ be a word, such that $\lenghtfunc{\wordi{c}} = \lenghtfunc{\wordi{i}} + \lenghtfunc{\wordi{2}}$ and $\wordi{c}[: \lenghtfunc{\wordi{1}} -1] = \wordi{1}$ and $\wordi{c}[\lenghtfunc{\wordi{1}} :] = \wordi{2}$. In some cases for simplification, we will notate word concatenation with just the sequentiality of the two words, and leave the $\concatop$ character.
+\end{itemize}
+
+\subsection{Languages}
+
+Let $\alphabetpow{i}$ denote the set of the words created from the symbols of \alphabet{} that has length i. 
+
+Let $\alphabetpow{*}$ denote $\alphabetSymbol^0 \cup \alphabetSymbol^1 \cup \ldots$, which in other words is the set of finite sequences created by the symbols of the alphabet.
+
+\begin{definition}[Formal language]
+	We call the set$ \languagesymbol{}$ a \emph{formal language} if $\languagesymbol{} \subseteq \alphabetpow{*}$
+\end{definition}
+
+Note that the definition of $\alphabetpow{*}$ allows the \emph{empty word} (which is a symbol sequence of length 0). The empty word is denoted by $\emptyword{}$
+
+We can define two distinguished languages, that exists over every alphabet.
+
+\begin{definition}[Empty language]
+	\emph{Empty language} is a language that does not contain any word, so $\languagei{0} = \emptyset$
+\end{definition}
+
+\begin{definition}[Unit language]
+	\emph{Unit language} is a language, that contains only one word, $\emptyword$. So in other words, $\languagei{\emptyword} = \{ \emptyword \}$
+\end{definition}
+
+\subsubsection{Operations Over Languages}
+
+Since languages are set of words, we can define basic set operations such as 
+\begin{itemize}
+	\item union
+	\item intersection
+	\item subtraction
+	\item complement (with respect to $\alphabetpow{*}$)
+	\item inclusion ($\languagei{1} \subseteq \languagei{2}$)
+\end{itemize}
+
+We can also define a concatenation operation for languages, that takes all the words from the first language and appends all of them to the second language. Formally, let $\languagei{1} \subseteq \alphabetpow{*}$ and $\languagei{2} \subseteq \alphabetpow{*}$ be two languages. The concatenation of two languages is $\languagei{1} \concatop \languagei{2} = \{ u_1 u_2 \suchthat u_1 \in \languagei{1}, u_2 \in \languagei{2} \}$
+
+With the notion of concatenation, we can also define power of languages. The n'th power of a language \languagesymbol is $\languagesymbol$ combined to itself n-1 times. Formally, we can define $\languagepow{n}$ inductively: let $\languagepow{0} = \{ \emptyword \}$ and $\languagepow{i+1} = \languagepow{i} \concatop \languagesymbol$.
+
+We can also define the \emph{Kleene star} of a language as $\languagepow{*} = \bigcup_n \languagepow{n}$. Or we can rephrase it as $\languagepow{*} = \{ \wordi{1} \ldots \wordi{n} \suchthat n \geq 0, \forall i \in [1,n]. \wordi{i} \in \languagesymbol \}$.
+
+This approach is quite similar to the implementation with Sets, it also ensures uniqueness, and the values, for which the function is true can not be enumerated. However, with functions we can implement infinite languages, on the other hand with the other two approach we can only model languages with arbitrary many words.
+
+\subsection{Regular Expressions}
+
+Languages can be constructed using regular expressions. A regular expression can contain the following constants:
+\begin{itemize}
+	\item The empty language $\emptyset$.
+	\item The unit language $\unitlang$ (denoted by simply $\emptyword$)
+	\item A language of one word $\setof{\wordsymbol}$ (denoted by $\wordsymbol$)
+\end{itemize}
+
+It defines the following operations.
+\begin{itemize}
+	\item \textbf{Concatenation} of sets of words.
+	\item \textbf{Union} of sets of words.
+	\item \textbf{Kleene star} of a set of words.
+\end{itemize}
+
+

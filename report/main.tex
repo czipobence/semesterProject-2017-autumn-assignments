@@ -1,0 +1,133 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsfonts,amsmath,amssymb}
+
+\usepackage[amsmath,thmmarks]{ntheorem} % Theorem-like environments.
+
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage[parfill]{parskip} %Skip initial spacing for each paragraph
+\usepackage{enumitem} %Customize enumerations
+\usepackage{mathtools}
+
+%links
+\usepackage{hyperref}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newtheorem{example}{Example}
+
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+
+\theoremstyle{definition}
+
+\theoremstyle{plain}
+
+\theoremseparator{.}
+%\theoremprework{\bigskip\hrule\medskip}
+%\theorempostwork{\hrule\bigskip}
+\theorembodyfont{\upshape}
+\theoremsymbol{{\large \ensuremath{\centerdot}}}
+
+\newtheorem*{definition}{Definition}
+
+%%Listings
+
+\usepackage{listings,multicol}
+\usepackage{lstscala}
+% Additional font
+%\usepackage{FiraMono}
+
+\lstdefinelanguage{Stainless}{ % Using `Scala` result in a infinite recursion
+	style=scala-color,
+	morekeywords={[2]Unit,Boolean,Byte,Int,BigInt,String,Char,true,false},
+	keywordstyle={[2]\color{blue!30!darkgray}\bfseries}
+}
+
+\newcommand{\Inline}[1]{\lstinline[basicstyle=\ttfamily,columns=fixed]|#1|}
+\newcommand{\InlineC}[1]{\lstinline[language=C99,columns=fixed]|#1|}
+\newcommand{\InlineS}[1]{\lstinline[language=Leon,columns=fixed]|#1|}
+% %\newcommand{\inlineScala}[1]{\lstinline[language=MyScala,breaklines=true,breakatwhitespace=true]|#1|}
+
+% Use code in description item, Based on http://tex.stackexchange.com/a/181325/77356
+\newcommand*{\lstitem}[1]{
+	\setbox0\hbox{\textbf{\Inline{#1}}}
+	\item[\usebox0]
+}
+
+% %\lstset{aboveskip=5pt,belowskip=10pt}
+% \lstset{captionpos=b,abovecaptionskip=1em}
+
+% For long listings
+\lstdefinestyle{LongCode}{
+	%aboveskip=1ex,
+	% basicstyle=\small\ttfamily,
+	basicstyle=\scriptsize\ttfamily,
+	% basicstyle=\tiny\ttfamily,
+	%belowskip=1ex,
+	breaklines=true,
+	postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{red}\hookrightarrow}},
+	breakautoindent=false,
+	%breakatwhitespace=false,
+	%columns=fullflexible,
+	multicols=2,
+	framerule=0pt,
+	framexrightmargin=0em,
+	framexleftmargin=0em,
+	% numbers=left,
+	% numberstyle=\footnotesize\sffamily,
+	tabsize=2
+}
+
+
+% Env for short code: no label, no caption and "inlined" with a box
+\lstnewenvironment{ShortCode}[1]
+{
+	\lstset{
+		language=#1,
+		frame=trBL % box the frame & double line on bottom and left side
+	}
+}
+{
+}
+
+% Env for longer code: label, caption and "floating" with a box
+\lstnewenvironment{Code}[3]
+{
+	\lstset{
+		language=#1,
+		label=#2,
+		caption=#3,
+		captionpos=b, % bottom
+		float=!h,     % "here"
+		frame=trBL,   % box the frame & double line on bottom and left side
+		% frameround=tttt
+	}
+}
+{
+	% DEBUG:
+	% 1: #1 \\
+	% 2: #2 \\
+	% 3: #3
+}
+
+\newcommand{\inline}[1]{\lstinline[language=Stainless,columns=fixed]|#1|}
+\begin{document}
+
+		
+	\title{Semester project report}
+	\author{Bence Czipó}
+	
+	\maketitle
+	
+	\include{include/introduction}
+	\include{include/implementation}
+	\include{include/theorems}
+	\include{include/evaluation}
+	
+\end{document}
