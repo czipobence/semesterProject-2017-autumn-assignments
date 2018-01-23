@@ -97,6 +97,14 @@ import Lang._
 
 object LangSpecs {
 
+  def listContentEquals[T](l1: List[T], l2: List[T]): Boolean = {
+    (l1 == l2) ==> (l1.content == l2.content)
+  }.holds
+
+  def equalityIsSame[T](l1: Lang[T], l2: Lang[T]): Boolean = {
+    (l1 == l2) ==> (l1 sameAs l2)
+  }.holds
+
   def rightUnitConcat[T](l1: Lang[T]): Boolean = {
 
     l1.concat(unitLang()) sameAs l1 because {
@@ -180,6 +188,58 @@ object LangSpecs {
     }
   }.holds
 
+  // Lemmas with subsetOf, stainless is able to verify the most of them,
+  // they are just added for completeness
+  def subsetOfTransitive[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    ((l1 subsetOf l2) && (l2 subsetOf l3)) ==> (l1 subsetOf l3)
+  }.holds
+
+  def inUnionSubset[T](l1: Lang[T], l2: Lang[T]): Boolean = {
+    (l1 subsetOf (l1 ++ l2)) && (l2 subsetOf (l1 ++ l2))
+  }.holds
+
+  def unionSubset[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    ((l1 subsetOf l3) && (l2 subsetOf l3)) ==> ((l1 ++ l2) subsetOf l3)
+  }.holds
+
+  def sameAsSubset[T](l1: Lang[T], l2: Lang[T]): Boolean = {
+    (l1 sameAs l2) ==> (l1 subsetOf l2)
+  }.holds
+
+  def sameAsSubsetTrans[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    ((l1 subsetOf l2) && (l2 sameAs l3)) ==> (l1 subsetOf l3)
+  }.holds
+
+  def sameAsSubsetTrans2[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    ((l1 sameAs l2) && (l2 subsetOf l3)) ==> (l1 subsetOf l3)
+  }.holds
+
+  def subsetSplit[T](l1: Lang[T], l2: Lang[T]): Boolean = {
+    (l1 subsetOf l2) ==> (l2 sameAs (l1 ++ (l2 -- l1)))
+  }.holds
+
+  def subsetSupersetSame[T](l1: Lang[T], l2: Lang[T]): Boolean = {
+    ((l1 subsetOf l2) && (l2 subsetOf l1)) ==> (l1 sameAs l2)
+  }.holds
+
+  def concatSubset[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    (l1 subsetOf l2) ==> ( (l1 concat l3) subsetOf (l2 concat l3) because {
+      check {(l2 sameAs (l1 ++ (l2 -- l1)))} &&
+      check { (l2 concat l3) sameAs ((l1 ++ (l2 -- l1)) concat l3) because {concatSameAs(l2,l1 ++ (l2 -- l1),l3)}} &&
+      check {((l1 ++ (l2 -- l1)) concat l3) sameAs ((l1 concat l3) ++ ((l2 -- l1) concat l3)) because {concatDistributiveAppendLeft(l1, l2--l1, l3)}} &&
+      check {(l1 concat l3) subsetOf ((l1 concat l3) ++ ((l2 -- l1) concat l3))}
+    })
+  }.holds
+
+  def concatSubset2[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
+    (l2 subsetOf l3) ==> ( (l1 concat l2) subsetOf (l1 concat l3) because {
+      check {l3 sameAs (l2 ++ (l3 -- l2))} &&
+      check { (l1 concat l2) subsetOf ((l1 concat l2) ++ (l1 concat (l3 -- l2))) } &&
+      check {((l1 concat l2) ++ (l1 concat (l3 -- l2))) sameAs (l1 concat (l2 ++ (l3 -- l2))) because {concatDistributiveAppendRight(l1, l2, l3--l2)}} &&
+      check {(l1 concat (l2 ++ (l3 -- l2))) sameAs (l1 concat l3) because {concatSameAs2(l1, l2++(l3 -- l2), l3)}}
+    })
+  }.holds
+
   def couldHaveDefinedOtherWay[T](l: Lang[T], i: BigInt): Boolean = {
     require(i >= BigInt(0))
     decreases(i)
@@ -205,6 +265,29 @@ object LangSpecs {
           check {((l :^ (i-1)) concat l) sameAs (l :^ i)}
         }
       }
+    }
+  }.holds
+
+  def unitLangPow[T](n: BigInt): Boolean = {
+    require(n >= BigInt(0))
+    (unitLang() ^ n) sameAs unitLang() because {
+      n match {
+        case BigInt(0) => true
+        case _ => {
+          check{(unitLang() ^ n) sameAs (unitLang() concat (unitLang() ^ (n-1)))} &&
+          check{(unitLang() concat (unitLang() ^ (n-1))) sameAs (unitLang() concat unitLang() ^ n-1)} &&
+          check{(unitLang() concat unitLang() ^ n-1) sameAs (unitLang ^ (n-1)) because{leftUnitConcat(unitLang ^ (n-1))}} &&
+          check{(unitLang ^ (n-1)) sameAs (unitLang()) because {unitLangPow(n-1)}}
+        }
+      }
+    }
+  }.holds
+
+  def langToFirst[T](l: Lang[T]): Boolean = {
+    (l ^ BigInt(1)) sameAs l because {
+      check {(l ^ BigInt(1)) sameAs (l concat (l ^ BigInt(0)))} &&
+      check {(l concat (l ^ BigInt(0))) sameAs (l concat (Lang[T](List(Nil()))))} &&
+      check {(l concat (Lang[T](List(Nil())))) sameAs l because {rightUnitConcat(l)}}
     }
   }.holds
 
@@ -244,29 +327,6 @@ object LangSpecs {
     }
   }.holds
 
-  def unitLangPow[T](n: BigInt): Boolean = {
-    require(n >= BigInt(0))
-    (unitLang() ^ n) sameAs unitLang() because {
-      n match {
-        case BigInt(0) => true
-        case _ => {
-          check{(unitLang() ^ n) sameAs (unitLang() concat (unitLang() ^ (n-1)))} &&
-          check{(unitLang() concat (unitLang() ^ (n-1))) sameAs (unitLang() concat unitLang() ^ n-1)} &&
-          check{(unitLang() concat unitLang() ^ n-1) sameAs (unitLang ^ (n-1)) because{leftUnitConcat(unitLang ^ (n-1))}} &&
-          check{(unitLang ^ (n-1)) sameAs (unitLang()) because {unitLangPow(n-1)}}
-        }
-      }
-    }
-  }.holds
-
-  def langToFirst[T](l: Lang[T]): Boolean = {
-    (l ^ BigInt(1)) sameAs l because {
-      check {(l ^ BigInt(1)) sameAs (l concat (l ^ BigInt(0)))} &&
-      check {(l concat (l ^ BigInt(0))) sameAs (l concat (Lang[T](List(Nil()))))} &&
-      check {(l concat (Lang[T](List(Nil())))) sameAs l because {rightUnitConcat(l)}}
-    }
-  }.holds
-
   def unitLangClose[T](n: BigInt): Boolean = {
     require(n >= BigInt(0))
     (unitLang() close n) sameAs unitLang() because {
@@ -280,48 +340,6 @@ object LangSpecs {
         }
       }
     }
-  }.holds
-
-  def listContentEquals[T](l1: List[T], l2: List[T]): Boolean = {
-    (l1 == l2) ==> (l1.content == l2.content)
-  }.holds
-
-  def equalityIsSame[T](l1: Lang[T], l2: Lang[T]): Boolean = {
-    (l1 == l2) ==> (l1 sameAs l2)
-  }.holds
-
-  // Lemmas with subsetOf, stainless is able to verify the most of them,
-  // they are just added for completeness
-  def subsetOfTransitive[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
-    ((l1 subsetOf l2) && (l2 subsetOf l3)) ==> (l1 subsetOf l3)
-  }.holds
-
-  def inUnionSubset[T](l1: Lang[T], l2: Lang[T]): Boolean = {
-    (l1 subsetOf (l1 ++ l2)) && (l2 subsetOf (l1 ++ l2))
-  }.holds
-
-  def unionSubset[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
-    ((l1 subsetOf l3) && (l2 subsetOf l3)) ==> ((l1 ++ l2) subsetOf l3)
-  }.holds
-
-  def sameAsSubset[T](l1: Lang[T], l2: Lang[T]): Boolean = {
-    (l1 sameAs l2) ==> (l1 subsetOf l2)
-  }.holds
-
-  def sameAsSubsetTrans[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
-    ((l1 subsetOf l2) && (l2 sameAs l3)) ==> (l1 subsetOf l3)
-  }.holds
-
-  def sameAsSubsetTrans2[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
-    ((l1 sameAs l2) && (l2 subsetOf l3)) ==> (l1 subsetOf l3)
-  }.holds
-
-  def subsetSplit[T](l1: Lang[T], l2: Lang[T]): Boolean = {
-    (l1 subsetOf l2) ==> (l2 sameAs (l1 ++ (l2 -- l1)))
-  }.holds
-
-  def subsetSupersetSame[T](l1: Lang[T], l2: Lang[T]): Boolean = {
-    ((l1 subsetOf l2) && (l2 subsetOf l1)) ==> (l1 sameAs l2)
   }.holds
 
   def powConcClose[T](l: Lang[T], p1: BigInt, p2: BigInt): Boolean = {
@@ -382,24 +400,6 @@ object LangSpecs {
         check {(l1 close p1) subsetOf ((l1 close (p2-1))) because {subsetCloseLe(l1,p1,p2-1)}}
       }
     }
-  }.holds
-
-  def concatSubset[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
-    (l1 subsetOf l2) ==> ( (l1 concat l3) subsetOf (l2 concat l3) because {
-      check {(l2 sameAs (l1 ++ (l2 -- l1)))} &&
-      check { (l2 concat l3) sameAs ((l1 ++ (l2 -- l1)) concat l3) because {concatSameAs(l2,l1 ++ (l2 -- l1),l3)}} &&
-      check {((l1 ++ (l2 -- l1)) concat l3) sameAs ((l1 concat l3) ++ ((l2 -- l1) concat l3)) because {concatDistributiveAppendLeft(l1, l2--l1, l3)}} &&
-      check {(l1 concat l3) subsetOf ((l1 concat l3) ++ ((l2 -- l1) concat l3))}
-    })
-  }.holds
-
-  def concatSubset2[T](l1: Lang[T], l2: Lang[T], l3: Lang[T]): Boolean = {
-    (l2 subsetOf l3) ==> ( (l1 concat l2) subsetOf (l1 concat l3) because {
-      check {l3 sameAs (l2 ++ (l3 -- l2))} &&
-      check { (l1 concat l2) subsetOf ((l1 concat l2) ++ (l1 concat (l3 -- l2))) } &&
-      check {((l1 concat l2) ++ (l1 concat (l3 -- l2))) sameAs (l1 concat (l2 ++ (l3 -- l2))) because {concatDistributiveAppendRight(l1, l2, l3--l2)}} &&
-      check {(l1 concat (l2 ++ (l3 -- l2))) sameAs (l1 concat l3) because {concatSameAs2(l1, l2++(l3 -- l2), l3)}}
-    })
   }.holds
 
 }
