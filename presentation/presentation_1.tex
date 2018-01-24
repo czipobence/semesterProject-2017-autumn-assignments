@@ -1,0 +1,915 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Beamer Presentation
+% LaTeX Template
+% Version 1.0 (10/11/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND THEMES
+%----------------------------------------------------------------------------------------
+
+\documentclass{beamer}
+
+\mode<presentation> {
+
+% The Beamer class comes with a number of default slide themes
+% which change the colors and layouts of slides. Below this is a list
+% of all the themes, uncomment each in turn to see what they look like.
+
+%\usetheme{default}
+%\usetheme{AnnArbor}
+%\usetheme{Antibes}
+%\usetheme{Bergen}
+%\usetheme{Berkeley}
+%\usetheme{Berlin}
+%\usetheme{Boadilla}
+%\usetheme{CambridgeUS}
+%\usetheme{Copenhagen}
+%\usetheme{Darmstadt}
+%\usetheme{Dresden}
+%\usetheme{Frankfurt}
+%\usetheme{Goettingen}
+%\usetheme{Hannover}
+%\usetheme{Ilmenau}
+%\usetheme{JuanLesPins}
+%\usetheme{Luebeck}
+\usetheme{Madrid}
+%\usetheme{Malmoe}
+%\usetheme{Marburg}
+%\usetheme{Montpellier}
+%\usetheme{PaloAlto}
+%\usetheme{Pittsburgh}
+%\usetheme{Rochester}
+%\usetheme{Singapore}
+%\usetheme{Szeged}
+%\usetheme{Warsaw}
+
+% As well as themes, the Beamer class has a number of color themes
+% for any slide theme. Uncomment each of these in turn to see how it
+% changes the colors of your current slide theme.
+
+%\usecolortheme{albatross}
+%\usecolortheme{beaver}
+%\usecolortheme{beetle}
+%\usecolortheme{crane}
+%\usecolortheme{dolphin}
+%\usecolortheme{dove}
+%\usecolortheme{fly}
+%\usecolortheme{lily}
+%\usecolortheme{orchid}
+%\usecolortheme{rose}
+%\usecolortheme{seagull}
+%\usecolortheme{seahorse}
+%\usecolortheme{whale}
+%\usecolortheme{wolverine}
+
+%\setbeamertemplate{footline} % To remove the footer line in all slides uncomment this line
+%\setbeamertemplate{footline}[page number] % To replace the footer line in all slides with a simple slide count uncomment this line
+
+%\setbeamertemplate{navigation symbols}{} % To remove the navigation symbols from the bottom of all slides uncomment this line
+}
+
+\usepackage{graphicx} % Allows including images
+\usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule in tables
+
+\usepackage[utf8]{inputenc}
+
+%----------------------------------------------------------------------------------------
+% RANDOM PACKAGES
+%----------------------------------------------------------------------------------------
+
+
+\usepackage[parfill]{parskip} %Skip initial spacing for each paragraph
+
+%%Listings
+\usepackage{algorithm}
+
+\usepackage{lstscala}
+\usepackage{enumerate}
+
+%\usepackage[inline]{enumitem}
+\usepackage{xspace}
+\usepackage{listings}
+
+\lstdefinelanguage{Stainless}{ % Using `Scala` result in a infinite recursion
+	style=scala-color,
+	morekeywords={[2]Unit,Boolean,Byte,Int,BigInt,String,Char,true,false},
+	keywordstyle={[2]\color{blue!30!darkgray}\bfseries}
+}
+
+
+\lstnewenvironment{code}[1][firstnumber=\themain,name=main]
+{\lstset{language=haskell,
+		basicstyle=\small\ttfamily,
+		numbers=left,
+		numberstyle=\tiny\color{gray},
+		backgroundcolor=\color{lightgray},
+		#1
+	}
+}
+{\setcounter{main}{\value{lstnumber}}}
+
+\lstnewenvironment{Stainless}
+{\lstset{
+		language=Stainless,
+		frame=tr % box the frame & double line on bottom and left side,
+		flexiblecolumns=false,
+		mathescape=false,
+		%basicstyle=\small\color{blue!30!darkgray}\tt
+		}}
+{}
+
+
+
+\newcommand{\inline}[1]{\lstinline[language=Stainless,columns=fixed]|#1|}
+
+
+
+%----------------------------------------------------------------------------------------
+% OWN COMMANDS
+%----------------------------------------------------------------------------------------
+
+
+\newcommand{\alphabetSymbol}{A}
+\newcommand{\alphabet}{\alphabetSymbol}
+\newcommand{\alphabetpow}[1]{\alphabetSymbol^{#1}}
+
+\newcommand{\languagesymbol}{L}
+\newcommand{\languagei}[1]{\languagesymbol_{#1}}
+
+\newcommand{\pow}[2]{#1^{#2}}
+\newcommand{\close}[2]{\pow{#1}{(#2)}}
+
+\newcommand{\languagepow}[1]{\pow{\languagesymbol}{#1}}
+\newcommand{\languageclose}[1]{\close{\languagesymbol}{#1}}
+
+
+
+\newcommand{\wordsymbol}{w}
+\newcommand{\wordi}[1]{\wordsymbol_{#1}}
+\newcommand{\emptyword}{\epsilon}
+
+\newcommand{\lenghtfunc}[1]{\text{len}(#1)}
+
+\newcommand{\concatop}{\cdot}
+
+\newcommand{\suchthat}{~ | ~}
+
+\newcommand{\languagefunctionsym}{f}
+\newcommand{\languagefunc}[1]{\languagefunctionsym_{#1}}
+\newcommand{\languagefunci}[1]{\languagefunctionsym_{\languagei{#1}}}
+
+
+\newcommand{\emptylist}{[\emptyset]}
+\newcommand{\unitlist}{[\emptyword]}
+\newcommand{\unitlang}{\{\emptyword\}}
+
+\newcommand{\setof}[1]{\{#1\}}
+
+\newcommand{\nats}{\mathbb{N}}
+\newcommand{\ints}{\mathbb{Z}}
+\newcommand{\reals}{\mathbb{R}}
+
+\newcommand{\regex}{r}
+\newcommand{\regexsetsym}{R}
+\newcommand{\regexsetl}{\regexsetsym_{\languagei{1}, \languagei{2}}}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\title[Semester project]{Full Title of the Talk} % The short title appears at the bottom of every slide, the full title is only on the title page
+
+\author{Bence Czipó} % Your name
+\institute[] % Your institution as it will appear on the bottom of every slide, may be shorthand to save space
+{
+École Polytechnique Fédérale de Lausanne \\ % Your institution for the title page
+\medskip
+\textit{bence.czipo@epfl.ch} % Your email address
+}
+\date{January 25, 2018} % Date, can be changed to a custom date
+
+\begin{document}
+
+\begin{frame}
+\titlepage % Print the title page as the first slide
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Introduction}
+
+\begin{itemize}
+	\item Formal Languages
+	\item Regular Expressions
+	\item Deterministic Finite Automaton
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Overview} % Table of contents slide, comment this block out to remove it
+\tableofcontents % Throughout your presentation, if you choose to use \section{} and \subsection{} commands, these will automatically be printed on this slide as an overview of your presentation
+\end{frame}
+
+%----------------------------------------------------------------------------------------
+%	PRESENTATION SLIDES
+%----------------------------------------------------------------------------------------
+
+\section{Formal Languages}
+\subsection{Definitions}
+
+\begin{frame}
+	\Huge{\centerline{Formal Languages}}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Definitions}
+	\begin{definition}[Alphabet]
+		An \emph{alphabet} \alphabet{} is a finite set of symbols $\{a_1, a_2, a_3, \ldots a_n\}$
+	\end{definition}
+	
+	
+	\begin{definition}[Words]
+		A \emph{string} (or \emph{word}) is a sequence of symbols. The length of a word is the number of symbols in the sequence.
+	\end{definition}
+	
+	
+	\begin{definition}[Formal language]
+		Let $\alphabetpow{i}$ denote the set of the words created from the symbols of \alphabet{} that has length i. 
+		
+		Let $\alphabetpow{*}$ denote $\alphabetSymbol^0 \cup \alphabetSymbol^1 \cup \ldots$, which in other words is the set of finite sequences created by the symbols of the alphabet.
+	
+		We call the set $ \languagesymbol{}$ a \emph{formal language} if $\languagesymbol{} \subseteq \alphabetpow{*}$
+	\end{definition}
+	
+	
+\end{frame}
+
+
+
+\begin{frame}
+	\frametitle{Operations}
+
+	\begin{itemize}
+		\onslide<1->{\item \textbf{union  ($\languagei{1} \cup \languagei{2}$)}}
+		\onslide<1->{\item \textbf{subtraction ($\languagei{1} \setminus \languagei{2}$)}}
+		\onslide<1->{\item \textbf{inclusion ($\languagei{1} \subseteq \languagei{2}$)}}
+		\onslide<2->{\item \textbf{concatenation ($\languagei{1} \concatop \languagei{2}$)}}
+		\onslide<3->{\item \textbf{power ($\languagepow{i}$)}}
+		\onslide<4->{\item \textbf{Kleene star ($\languagepow{*}$)}}
+		\onslide<5->{\item complement (with respect to $\alphabetpow{*}$)}
+		\only<5->{\item intersection ($\languagei{1} \cap \languagei{2}$)}
+	\end{itemize}
+	
+	\only<2>{
+		\begin{definition}[Concatenation]
+			Let $\languagei{1} \subseteq \alphabetpow{*}$ and $\languagei{2} \subseteq \alphabetpow{*}$ be two languages. The concatenation of two languages is $\languagei{1} \concatop \languagei{2} = \{ u_1 u_2 \suchthat u_1 \in \languagei{1}, u_2 \in \languagei{2} \}$
+		\end{definition}
+	}
+	\only<3> {
+		\begin{definition}[Power of languages]
+			let $\languagepow{0} = \{ \emptyword \}$ and $\languagepow{i+1} = \languagepow{i} \concatop \languagesymbol$
+		\end{definition}
+	}
+	\only<4> {
+		\begin{definition}[Kleene star]
+			$\languagepow{*} = \{ \wordi{1} \ldots \wordi{n} \suchthat n \geq 0, \forall i \in [1,n]. \wordi{i} \in \languagesymbol \}$
+			
+			
+		\end{definition}
+		\begin{lemma}
+			$\languagepow{*} = \bigcup_n \languagepow{n}$
+		\end{lemma}
+	}
+	\only<5>{Last two are not part of the implementation}
+	
+\end{frame}
+
+\begin{frame}{Distinguished Languages}
+	\begin{definition}[Empty language]
+		\emph{Empty language} is a language that does not contain any word, so $\languagei{0} = \emptyset$
+	\end{definition}
+	
+	\begin{definition}[Unit language]
+		\emph{Unit language} is a language, that contains only one word, $\emptyword$. So in other words, $\languagei{\emptyword} = \{ \emptyword \}$
+	\end{definition}
+\end{frame}
+
+
+\subsection{Implementation}
+
+\begin{frame}{Representation in Scala}
+	\begin{itemize}
+		\item Symbols: $\rightarrow$ \inline{Any} (T - generic type) 
+		
+		\item Words $\rightarrow$\inline{ List[T]}
+		
+		\only<2->{
+			\begin{itemize}
+				\item $\emptyword$ can be represented as \inline{Nil[T]},
+				\item $\lenghtfunc{\wordsymbol}$ can be represented as \inline{w.size}
+				\item indexing can be represented using the indexing operator of lists,
+				\item range indexing can be implemented combining \inline{take} and \inline{drop}
+				\item concatenation of words $\wordi{1}$ and $\wordi{2}$ can be expressed as \inline{w1 ++ w2}
+			\end{itemize}	
+		}
+		
+		\onslide<3->{\item Languages  $\rightarrow$} \only<3>{???}
+		\only<4->{
+			\begin{itemize}
+				\item \inline{Set[Words]}
+				\item \inline{Words -> Boolean}
+				\item Unique (and ordered) \inline{List[Words]} 
+				\item \inline{List[Words]} 
+			\end{itemize}	
+		}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Languages as Set}
+\begin{Stainless}
+case class Lang[T](set: Set[List[T]]) {	
+ def concat(that: Lang[T]): Lang[T] = ???
+ 
+ def ++(that: Lang[T]):Lang[T] = 
+                    Lang[T](this.set ++ that.set)
+ 
+ def contains(word: List[T]): Boolean = 
+                               set.contains(word)
+ [...]
+	
+}
+\end{Stainless}
+		
+	
+\end{frame}
+
+\begin{frame}[fragile]{Languages as Function}
+	\begin{Stainless}
+case class Lang[T](f: List[T] => Boolean) {	
+ def concat(that: Lang[T]): Lang[T] = 
+   Lang[T](l => !forall( (i: BigInt) => !(
+     i <= l.size && i >= 0 &&
+     this.f(l.take(i)) && that.f(l.drop(i))
+   )))
+ 	
+ def ++(that: Lang[T]): Lang[T] = 
+         Lang[T](w => this.f(w) || that.f(w))
+
+ def == (that: Lang[T]): Boolean =
+   forall((x:List[T]) =>  this.f(x) == that.f(x)) 
+ 
+ def contains(word: List[T]): Boolean = f(word)
+}
+\end{Stainless}
+	
+	
+\end{frame}
+
+\begin{frame}[fragile]{Languages as List (non-unique)}
+\begin{Stainless}
+case class Lang[T](list: List[List[T]]) {
+  def concat(that: Lang[T]): Lang[T] = 
+        Lang[T](concatLists(this.list, that.list))
+  
+  def ++(that: Lang[T]): Lang[T] =
+        Lang[T](this.list ++ that.list)
+
+  def == (that: Lang[T]): Boolean =
+        (this.list.content == that.list.content)
+
+  def contains(word: List[T]): Boolean = 
+        list.contains(word)
+
+  [...]
+}
+\end{Stainless}
+	
+\end{frame}
+
+\begin{frame}[fragile]{Languages as List (non-unique)}
+\begin{Stainless}
+def concatLists(l1: List[List[T]], 
+         l2: List[List[T]]):  List[List[T]] = 
+  l2 match {
+    case Nil() => Nil[List[T]]()
+    case Cons(x,xs) => 
+         appendToAll(l1,x)++combineLists(l1,xs)
+}
+\end{Stainless}
+
+
+\begin{Stainless}
+def appendToAll( l: List[List[T]], 
+      suffix: List[T] ):List[List[T]] = l match {
+    case Nil() => Nil[List[T]]()
+    case Cons(x,xs) => 
+         (x ++ suffix)::appendToAll(xs, suffix)
+}
+\end{Stainless}
+
+
+	
+\end{frame}
+\newcommand{\highlighgood}[1]{\underline{#1}}
+\newcommand{\highlightbad}[1]{\textbf{#1}}
+
+\begin{frame}{Comparison}
+
+	
+\renewcommand{\arraystretch}{1.5}
+\begin{center}
+	\begin{table}
+		%\label{tab:implComparison}
+		\begin{tabular}{| p{2cm} | p{2cm} | p{2cm}| p{2cm} | p{2cm} |}
+			
+			\hline
+			& Sets & Lists - 1 & Lists - 2  & Functions \\ \hline
+			Unique & Yes & Yes & \highlightbad{No} & Yes \\ \hline
+			Iterable & No & \highlighgood{Yes} & \highlighgood{Yes} & No \\ \hline
+			Infinity & No & No & No & \highlighgood{Yes} \\ \hline
+			Equality & Trivial & Content = & Content = &\highlighgood{ $\forall$ expr} \\ \hline
+			Concat &\highlightbad{???} & \highlighgood{S.I. 2x} & \highlighgood{S.I. 2x} & \highlightbad{Complex} \\ \hline
+			Contain & Trivial & Trivial & Trivial & Trivial \\ \hline
+			Set ops ($\cup, ~ \cap, \ldots$) & Trivial & \highlightbad{Uniqueness} & Trivial & Trivial \\ \hline
+			Lemmas & Trivial & Trivial & \highlightbad{About cont} & Trivial \\ \hline
+		\end{tabular}		
+	\end{table}
+	
+\end{center}	
+\end{frame}
+
+\begin{frame}{Extending implementation with List}
+	How to implement Kleene star?
+	
+	\onslide<2->{	\begin{theorem}
+			$\languagepow{*}$  is only finite if $\languagei{} = \emptyset$ or $\languagei{} = \unitlang$.
+			\end{theorem}
+			
+			We can not express it using finite language representations.}
+	
+	\onslide<3-> {
+			\begin{definition}[Close]
+				Let $n \in \nats$. The n'th close of the language can be defined as $ \languageclose{n} = \bigcup_{i=0}^n \languagepow{i}$.
+				\end{definition}}
+	
+	
+	\onslide<4-> {
+	
+	\begin{lemma}
+		If $\wordsymbol \in \languagepow{*}$ then $\exists n \in \nats. $ such that $\wordsymbol \in \languageclose{n}$
+		\end{lemma}	
+	}
+\end{frame}
+
+\subsection{Theorems}
+
+\begin{frame}
+\Huge{Theorems and Lemmas About Languages}
+\end{frame}
+
+\begin{frame}{Distributivity}
+\begin{theorem}[Left Distributivity]
+	\label{lem:clLeftDistributiveAppend}
+	For any languages $\languagei{1}, \languagei{2}, \languagei{3}$ we have $(\languagei{1} \cup \languagei{2}) \concatop \languagei{3} == \languagei{1} \concatop \languagei{3} \cup \languagei{2} \concatop \languagei{3}$.
+\end{theorem}
+
+\begin{theorem}[Right Distributivity]
+	\label{lem:clRightDistributiveAppend}
+	For any languages $\languagei{1}, \languagei{2}, \languagei{3}$ we have $(\languagei{1} \cup \languagei{2}) \concatop \languagei{3} == \languagei{1} \concatop \languagei{3} \cup \languagei{2} \concatop \languagei{3}$.
+\end{theorem}
+\end{frame}
+
+\begin{frame}{Concatenation special cases}
+	\begin{theorem}[Null Concatenation - Right]
+		$\forall \languagei{} \subseteq \alphabetpow{*}. ~ \languagei{} \concatop \emptyset = \emptyset$
+	\end{theorem}
+	
+	\begin{theorem}[Null Concatenation - Left]
+		$\forall \languagei{} \subseteq \alphabetpow{*}. ~ \emptyset \concatop \languagei{} = \emptyset$
+	\end{theorem}
+	
+	\begin{theorem}[Unit Concatenation - Right]
+		\label{the:rightUnitConcat}
+		$\forall \languagei{} \subseteq \alphabetpow{*}.$ we have  $\languagei{} \concatop \unitlang = \languagei{}$
+		%$\unitlang \concatop \languagei{} = \languagei{}$
+	\end{theorem}
+	
+	\begin{theorem}[Unit Concatenation - Left]
+		\label{the:leftUnitConcat}
+		$\forall \languagei{} \subseteq \alphabetpow{*}.$ we have $\unitlang \concatop \languagei{} = \languagei{}$
+	\end{theorem}
+	
+\end{frame}
+
+\begin{frame}{Equivalence Lemmas}
+	
+	Same operation performed on the same languages.
+	
+	\onslide<2->{Due to the selected implementation, equivalence is not always trivial.}
+	
+	\onslide<3>{
+	\begin{lemma}
+		\label{lem:clContentEquals}
+		Let $\languagei{1}, \languagei{2}, \languagei{3}$ be three languages over the same alphabet, and let $\languagei{1} = \languagei{2}$. Then $\languagei{1} \concatop \languagei{3} = \languagei{2} \concatop \languagei{3}$ 
+	\end{lemma}
+	
+	We can also state the lemma for the other case, where the left hand side operator is fixed.
+	
+	\begin{lemma}
+		\label{lem:clContentEquals2}
+		Let $\languagei{1}, \languagei{2}, \languagei{3}$ be three languages over the same alphabet, and let $\languagei{2} = \languagei{3}$. Then $\languagei{1} \concatop \languagei{2} = \languagei{1} \concatop \languagei{3}$ 
+	\end{lemma}
+	}
+\end{frame}
+
+\begin{frame}{Associativity}
+	\begin{itemize}
+		\item $\forall \languagesymbol \in \alphabetpow{*}.$ 	$\languagesymbol \concatop \unitlang = \unitlang \concatop \languagesymbol = \languagesymbol$.
+		\item Is $(\alphabetpow{*};\concatop)$ a monoid?
+		\onslide<2->{\item Yes, associativity holds.}
+	\end{itemize}
+	
+	\onslide<3->{
+	\begin{theorem}[Associativity]
+		\label{the:associativity}
+		For every $\languagei{1}, \languagei{2}, \languagei{3} \subseteq \alphabetpow{*}$ we have $(\languagei{1} \concatop \languagei{2}) \concatop \languagei{3}  = \languagei{1} \concatop ( \languagei{2} \concatop \languagei{3} )$
+	\end{theorem}	
+	
+	
+	\begin{proof}
+		\begin{enumerate}
+		\item $((\setof{hd} \cup tl) \concatop \languagei{2}) \concatop \languagei{3}$ = applying the distributive law
+					 
+		\item $((\setof{hd} \concatop \languagei{2}) \cup (tl \concatop \languagei{2})) \concatop \languagei{3}$ = applying the distributive law
+					 
+		\item $((\setof{hd} \concatop \languagei{2}) \concatop \languagei{3}) \cup ((tl \concatop \languagei{2}) \concatop \languagei{3})$ = applying induction
+					 
+		\item $((\setof{hd} \concatop \languagei{2}) \concatop \languagei{3}) \cup (tl \concatop (\languagei{2} \concatop \languagei{3}))$ = cheating
+					 
+		\item $(\setof{hd} \concatop (\languagei{2} \concatop \languagei{3})) \cup (tl \concatop (\languagei{2} \concatop \languagei{3}))$ = applying the distributive law
+					 
+		 \item $(\setof{hd} \cup tl) \concatop (\languagei{2} \concatop \languagei{3})$
+		\end{enumerate}
+	
+	\end{proof}
+	}
+\end{frame}
+
+\begin{frame}{Cheating?}
+	\begin{lemma}
+		\label{lem:replaceConcatPrepend}
+		For any word $\wordsymbol$ and languages $\languagei{1}$ and $\languagei{2}$ we have $(\setof{\wordsymbol} \concatop \languagei{1}) \concatop \languagei{2} = \setof{\wordsymbol} \concatop (\languagei{1} \concatop \languagei{2})$
+	\end{lemma}
+	
+	\begin{proof}
+		Applying induction once more...
+	\end{proof}
+\end{frame}
+
+\begin{frame}{Theorems About Power of Languages}
+Definition of the power operation only states $\languagepow{0} = \unitlang$ explicitly.
+
+This is similar to the case in real numbers where $a^0 = 1$.
+
+Can we have a rule like $a^1 = a$
+
+\only<2->{
+	
+\begin{lemma}[First power of languages]
+	\label{lem:langToFirst}
+	For any language $\languagesymbol$ we have $\languagesymbol^1 = \languagesymbol$.
+\end{lemma}	
+}
+
+\only<3->{
+\begin{proof}
+	$\languagesymbol^1$ = (by definition) \\
+	$\languagesymbol \concatop (\languagesymbol^0$) = (by definition) \\
+	$\languagesymbol \concatop \unitlang$ = (by unit concatenation lemma) \\
+	$\languagesymbol$
+\end{proof}
+	
+	
+}
+
+\end{frame}
+
+\begin{frame}{Theorems About Power of Languages}
+	We also know that $1^n = 1$, but what about languages?
+	\begin{lemma}[Power of unit language]
+		\label{lem:unitLangPow}
+		For any $i \in \nats$ we have $\unitlang^i = \unitlang$
+	\end{lemma}
+	
+	\begin{proof}
+		Applying the definition, induction on i and after the unit combination lemma, we get:
+		$\unitlang^i = \unitlang \concatop \pow{\unitlang}{i-1} = \unitlang \concatop \unitlang = \unitlang$
+	\end{proof}
+	
+\end{frame}
+
+\begin{frame}{Theorems About Power of Languages}
+	The decision that power unfolds to the left was ad-hoc
+	
+	It could have been defined the other way
+	\begin{theorem}[Power definition equality]
+		\label{the:couldHaveDefinedOtherWay}
+		For all language $\languagesymbol$ and $i \in \nats$ we have $\languagesymbol ^ i = \languagesymbol \concatop \languagesymbol ^ {i-1} = \languagesymbol ^ {i-1} \concatop L$
+	\end{theorem}
+	
+	\begin{Proof}
+		\begin{itemize}
+			\item case $i = 0$: trivial
+			\item case $i = 1$: trivial (applying first power lemma)
+			\item case $i > 1$: apply induction on i, or simply unfold and apply associativity $i-2$ times
+		\end{itemize}
+	\end{Proof}
+\end{frame}
+
+\begin{frame}{Theorems About Power of Languages}
+	\begin{lemma}[Language to the sum]
+		\label{lem:powSum}
+		For any language $\languagesymbol$ and numbers $a,b \in \nats$ we have $\languagesymbol ^ {a+b} == (\languagesymbol ^ b) \concatop (\languagesymbol ^ b)$.
+	\end{lemma}
+	
+	\begin{proof}
+		Apply induction on a (or b)
+	\end{proof}
+\end{frame}
+
+\begin{frame}{Theorems About Close of Languages}
+	\begin{lemma}[Close of Empty Language]
+		\label{lem:nullLangClose}
+		For every $i \in \nats$ we have $\close{\emptyset}{i} = \unitlang$
+	\end{lemma}
+	
+\onslide<2->{
+		\begin{lemma}[Close of Unit Language]
+			\label{lem:unitLangClose}
+			For every $i \in \nats$ we have $\close{\unitlang}{i} = \unitlang$
+		\end{lemma}	
+}
+	
+\onslide<3->{
+
+\begin{lemma}[Close Order]
+	\label{lem:subsetCloseLe}
+	$\forall \languagesymbol.$  $\languageclose{i} \subseteq \languageclose{j}$ iff. $i \le j$.
+\end{lemma}	
+
+And so on...
+}
+\end{frame}
+
+\begin{frame}{Theorems About Close of Languages}
+	
+	We would also like to define something similar to "Language to the sum"
+	
+	\begin{lemma}
+		\label{lem:sumCloseSame}
+		For every language $\languagei{}$ and $a,b \in \nats$ we have $\languageclose{a+b} == \languageclose{a} \concatop \languageclose{b} $
+	\end{lemma}
+	\onslide<2-> {
+		Does it even hold?
+		}
+	
+	\onslide<3-> {Yes, but it would be hard to prove, and something weaker will be enough}
+	
+	\onslide<3-> {
+\begin{lemma}
+	\label{lem:sumClose}
+	For every language $\languagei{}$ and $a,b \in \nats$ we have $\languageclose{a} \concatop \languageclose{b} \subseteq \languageclose{a+b}$
+\end{lemma}
+		
+		}
+\end{frame}
+
+\section{Regular Expressions}
+
+\begin{frame}
+	\Huge{\centerline{Regular Expressions}}
+\end{frame}
+
+\subsection{Definition}
+
+\begin{frame}{"Official" definition}
+	 A regular expression can contain the following constants:
+	 \begin{itemize}
+	 	\item The empty language $\emptyset$.
+	 	\item The unit language $\unitlang$ (denoted by simply $\emptyword$)
+	 	\item A language of one word $\setof{\wordsymbol}$ (denoted by $\wordsymbol$)
+	 \end{itemize}
+	 
+	 It defines the following operations.
+	 \begin{itemize}
+	 	\item \textbf{Concatenation} of sets of words (denoted by $\concatop$ or sequentiality)
+	 	\item \textbf{Union} of sets of words (denoted by \textbar)
+	 	\item \textbf{Kleene star} (repetition) of a set of words (denoted by *)
+	 \end{itemize}
+	 
+	 \begin{example}
+	 	\textit{(abc)*d(e\textbar f)}, matches for example \textit{"abcde"}, \textit{"abcabcdf"} and \textit{"de"}
+	 \end{example}
+\end{frame}
+
+\subsection{Implementation}
+
+\begin{frame}[fragile]{Implementation}
+	
+	Instead of these constant use any language as building block, but limit their number to 2
+	
+	Have a function \inline{eval[T](l1: Lang[T], l2: Lang[T]): Lang[T]} to evaluate the value
+	
+	
+	Use case classes
+\begin{Stainless}	
+sealed abstract class RegEx {
+  //evaluate the regular expression to a language
+  def eval[T](l1: Lang[T], l2: Lang[T]): Lang[T]
+}
+\end{Stainless}	
+	
+	
+\end{frame}
+
+\begin{frame}[fragile]{Case Classes}
+\begin{Stainless}
+case class L1() extends RegEx {
+  override def eval[T](...): Lang[T] = l1
+}	
+case class L2() extends RegEx {
+  override def eval[T](...): Lang[T] = l2
+}
+
+case class Union(l:RegEx, r:RegEx) extends RegEx {
+  override def eval[T](...): Lang[T] = 
+                    l.eval(...) ++ r.eval(...)
+}
+
+case class Conc(l:RegEx, r:RegEx) extends RegEx {
+  override def eval[T](...): Lang[T] = 
+                   l.eval(...) concat r.eval(...)
+}
+
+\end{Stainless}
+\end{frame}
+
+\begin{frame}[fragile]{Dealing with Star}
+
+\begin{itemize}
+	\item Still can not represent infinite languages
+	
+	\item {We could apply the close-trick	}
+	
+	\item {Only a syntactic sugar for finite union of pows}
+	
+\end{itemize}
+
+\begin{Stainless}
+case class Pow(r:RegEx, n:BigInt) extends RegEx {
+  override def eval[T](...): Lang[T] = 
+           r.eval(...) ^ n
+}
+\end{Stainless}	
+
+
+
+
+
+\end{frame}
+\subsection{Theorems}
+
+\begin{frame}
+	\Huge{\centerline{Theorems and Lemmas}}
+\end{frame}
+
+\begin{frame}{Theorems}
+	\begin{theorem}
+		For every regular expression $\regex$ defined over the languages $\languagei{1}, \languagei{2}$, if r evaluates to $\languagei{}$, then $\languagesymbol \subseteq \pow{(\languagei{1} \cup \languagei{2})}{*}$
+	\end{theorem}
+	
+	Still can not handle * properly
+	\onslide<2-> {
+	
+	\begin{lemma}
+		For every regular expression $\regex$ defined over the languages $\languagei{1}, \languagei{2}$, if r evaluates to $\languagei{}$, then $\exists i \in \nats. ~ \languagesymbol \subseteq \close{(\languagei{1} \cup \languagei{2})}{i}$
+		\end{lemma}	
+		
+	}
+	
+	\onslide<3-> {
+		Try to construct such i manually	
+	}
+	
+\end{frame}
+
+\begin{frame}{Finding exponent}
+	
+Lets define a function \inline{evalExp(): BigInt} such that
+\begin{itemize}
+	\item for \inline{L1} and \inline{L2} it is $1$
+	\onslide<2->{\item for \inline{Union(l,r)} it is \inline{max(l.evalExp(), r.evalExp())}}
+	\onslide<3->{\item for \inline{Conc(l,r)} it is  \inline{l.evalExp() + r.evalExp()}}
+	\onslide<4->{\item for \inline{Pow(r,n)} it is  \inline{r.evalExp() * n}}
+\end{itemize}
+
+\onslide<5->{
+\begin{lemma}
+\label{lem:regexSubsetStar}
+For every regular expression $\regex$ defined over the languages $\languagei{1}, \languagei{2}$, if $\languagei{}$ is defined by r, if i = \inline{r.evalExp()} then $\languagesymbol \subseteq \close{(\languagei{1} \cup \languagei{2})}{i}$
+\end{lemma}	
+}
+
+\end{frame}
+
+\begin{frame}{Proving suitability - Constants}
+	 Case \inline{L1} and \inline{L2} it is trivial because of the following lemma.
+			
+	\begin{lemma}
+		\label{lem:inUnionSubset}
+		For all languages $\languagei{1}, \languagei{2}$ we have $\languagei{1} \subseteq (\languagei{1} \cup \languagei{2})$ and $\languagei{2} \subseteq (\languagei{1} \cup \languagei{2})$
+	\end{lemma}
+\end{frame}
+
+\begin{frame}{Proving suitability - Union}
+	Case \inline{Union} we can say that $\close{(\languagei{1} \cup \languagei{2})}{a} \subseteq \close{(\languagei{1} \cup \languagei{2})}{max(a,b)}$ and $\close{(\languagei{1} \cup \languagei{2})}{b} \subseteq \close{(\languagei{1} \cup \languagei{2})}{max(a,b)}$ because of the "Close order lemma" ($a \le max(a,b)$ and $b \le max(a,b)$)
+	
+	a,b are \inline{r1.evalExp()} and \inline{r2.evalExp()}
+	
+	\begin{lemma}[Distributivity of subset]
+		\label{lem:unionSubset}
+		Let $\languagei{1}, \languagei{2}, \languagei{3}$ be three languages. If $\languagei{1} \subseteq \languagei{3}$ and $\languagei{2} \subseteq \languagei{3}$ then $(\languagei{1} \cup \languagei{2})\subseteq \languagei{3}$
+	\end{lemma}
+	
+	\begin{lemma}[Transitivity of subset]
+		\label{lem:subsetOfTransitive}
+		Let $\languagei{1}, \languagei{2}, \languagei{3}$ be three languages. If $\languagei{1} \subseteq \languagei{2}$ and  $\languagei{2} \subseteq \languagei{3}$ then  $\languagei{1} \subseteq \languagei{3}$.
+	\end{lemma}
+	
+	
+	Applying this two we can prove the statement
+	
+	
+\end{frame}
+
+\begin{frame}{Proving suitability - Concatenation}
+	Recall the following lemma:
+	\begin{lemma}
+		For every language $\languagei{}$ and $a,b \in \nats$ we have $\languageclose{a} \concatop \languageclose{b} \subseteq \languageclose{a+b}$
+	\end{lemma}
+	
+	Case \inline{Conc} the proof is similar to the previous case, but now we use the lemma above. Since we only want to prove inclusion, the weaker (and proved) form of the lemma is sufficient.
+\end{frame}
+
+\begin{frame}{Proving suitability - Power}
+	\inline{Pow(r,n)} can be expressed as:
+	
+	\inline{Conc(r, Conc(r, Conc(..., Conc(r, Pow(r,1)) ...)))} \\
+	
+	Which is equivalent to:
+	
+	\inline{Conc(r, Conc(r, Conc(..., Conc(r, r) ...)))}
+	
+	So power is only a syntactic sugar in regular expressions
+	
+	We can deduce it from the previous case, where we get $\sum_{i=1}^{n}$ r.evalExp() = n * r.evalExp()
+\end{frame}
+
+\begin{frame}{Last missing piece}
+	
+	\begin{lemma}
+		\label{lem:evalExpPositive}
+		For each regular expression $\regex$ we have \inline{r.evalExp() > 0}.
+	\end{lemma}
+	
+	\begin{proof}
+		\begin{itemize}
+			\item In case of the constants this is trivial as $1 > 0$
+			\onslide<2->{\item In case of \inline{Union(l,r)}, we can apply induction. We know that \inline{l.evalExp()} $\le 0$ and \inline{r.evalExp()} $\le 0$. The maximum of two non-negative numbers will be non-negative.}
+			\onslide<3->{\item In case of \inline{Cons(l,r)}, we can apply induction. We know that \inline{l.evalExp()} $\le 0$ and \inline{r.evalExp()} $\le 0$. The sum of two non-negative numbers will be non-negative.}
+			\onslide<4->{\item In case of \inline{Pow(r,n)}, we can apply induction. We know that $n \le 0$ and \inline{r.evalExp()} $\le 0$. The product of two non-negative numbers will be also non-negative.}
+		\end{itemize}
+	\end{proof}
+\end{frame}
+
+\begin{frame}{Conclusion and Future Work}
+	
+\end{frame}
+
+\begin{frame}
+\Huge{\centerline{Questions?}}
+\end{frame}
+
+%----------------------------------------------------------------------------------------
+
+\end{document} 
