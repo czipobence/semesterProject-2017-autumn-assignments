@@ -156,7 +156,7 @@ As it was mentioned in Section~\ref{sect:impl.comp}, I used list of words to rep
 
 \subsubsection{Combination to the Empty Language}
 
-\begin{theorem}[Null Combination]
+\begin{theorem}[Null Concatenation]
 	Any language concatenated to the empty language results in the empty language, formally,
 	\begin{itemize}
 		\item $\forall \languagei{}. ~ \languagei{} \concatop \emptyset = \emptyset$
@@ -323,14 +323,14 @@ First of all, define that if two languages are the same, concatenating them to t
 
 \begin{lemma}
 	\label{lem:clContentEquals}
-	Let $\languagei{1}, \languagei{2}, \languagei{3}$ be three languages in the same alphabet, and let $\languagei{1} == \languagei{2}$. Then $\languagei{1} \concatop \languagei{3} == \languagei{2} \concatop \languagei{3}$ 
+	Let $\languagei{1}, \languagei{2}, \languagei{3}$ be three languages over the same alphabet, and let $\languagei{1} == \languagei{2}$. Then $\languagei{1} \concatop \languagei{3} == \languagei{2} \concatop \languagei{3}$ 
 \end{lemma}
 
 We can also state the lemma for the other case, where the left hand side operator is fixed.
 
 \begin{lemma}
 	\label{lem:clContentEquals2}
-	Let $\languagei{1}, \languagei{2}, \languagei{3}$ be three languages in the same alphabet, and let $\languagei{2} == \languagei{3}$. Then $\languagei{1} \concatop \languagei{1} == \languagei{1} \concatop \languagei{3}$ 
+	Let $\languagei{1}, \languagei{2}, \languagei{3}$ be three languages over the same alphabet, and let $\languagei{2} == \languagei{3}$. Then $\languagei{1} \concatop \languagei{2} == \languagei{1} \concatop \languagei{3}$ 
 \end{lemma}
 
 The proof for these lemmas are not included, but shown in functions \inline{clContentEquals} and \inline{clContentEquals2} and in other, referenced sub-lemmas.
@@ -559,7 +559,7 @@ These two can be proved easily using induction, as shown in the code at function
 
 A useful property of close that $\languageclose{i} \subseteq \languageclose{j}$ is equivalent to $i \le j$.
 
-\begin{lemma}
+\begin{lemma}[Close Order]
 	\label{lem:subsetCloseLe}
 	$\forall \languagesymbol.$  $\languageclose{i} \subseteq \languageclose{j}$ iff. $i \le j$.
 \end{lemma}
@@ -607,9 +607,9 @@ We can state a lemma nearly equivalent to the previous theorem:
 
 For \inline{L1} and \inline{L2} it is trivial that $i=1$ is sufficient because of Lemma~\ref{lem:inUnionSubset}.
 
-For \inline{Union(r1,r2)} we can say that $\close{(\languagei{1} \cup \languagei{2})}{a} \subseteq \close{(\languagei{1} \cup \languagei{2})}{max(a,b)}$ and $\close{(\languagei{1} \cup \languagei{2})}{b} \subseteq \close{(\languagei{1} \cup \languagei{2})}{a,b}$ (a,b are \inline{r1.evalExp()} and \inline{r2.evalExp()}). From there we can apply the subset distributivity over union (Lemma~\ref{lem:unionSubset}) and with induction and subset transitivity (Lemma~\ref{lem:subsetOfTransitive}) we can prove the statement.
+For \inline{Union(r1,r2)} we can say that $\close{(\languagei{1} \cup \languagei{2})}{a} \subseteq \close{(\languagei{1} \cup \languagei{2})}{max(a,b)}$ and $\close{(\languagei{1} \cup \languagei{2})}{b} \subseteq \close{(\languagei{1} \cup \languagei{2})}{max(a,b)}$ (a,b are \inline{r1.evalExp()} and \inline{r2.evalExp()}). From there we can apply the subset distributivity over union (Lemma~\ref{lem:unionSubset}) and with induction and subset transitivity (Lemma~\ref{lem:subsetOfTransitive}) we can prove the statement.
 
-For \inline{Concat(r1,r2)} we chose \inline{evalExp = r1.evalExp() + r2.evalExp()}. Here the proof is similar to the previous case, but now we use Lemma~\ref{lem:sumClose} about the union of closes being contained in the close of sum. Since we only want to prove inclusion, the weaker (and proved) for of the lemma is sufficient.
+For \inline{Concat(r1,r2)} we chose \inline{evalExp = r1.evalExp() + r2.evalExp()}. Here the proof is similar to the previous case, but now we use Lemma~\ref{lem:sumClose} about the union of closes being contained in the close of sum. Since we only want to prove inclusion, the weaker (and proved) form of the lemma is sufficient.
 
 We can say that \inline{Pow(r,n)} can be expressed as \\ \inline{Conc(r, Conc(r, Conc(..., Conc(r, Pow(r,1)) ...)))} which is \\ \inline{Conc(r, Conc(r, Conc(..., Conc(r, r) ...)))}, so this is only a syntactic sugar in regular expressions. For this reason, lets omit this case in the proofs.
 
