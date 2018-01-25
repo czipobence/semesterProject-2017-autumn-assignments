@@ -44,8 +44,8 @@ case class Conc(left: RegEx, right: RegEx) extends RegEx {
 }
 
 //This case is not crucial, as Pow(r,n) = Conc(r, pow(r, n-1))
-/*
-case class Pow(expr: RegEx, pow: BigInt) extends RegEx {
+
+/*case class Pow(expr: RegEx, pow: BigInt) extends RegEx {
   require(pow >= BigInt(0))
   override def eval[T](l1: Lang[T], l2: Lang[T]): Lang[T] = (expr.eval(l1, l2) ^ pow)
   override def evalExp(): BigInt = (expr.evalExp() * pow)
