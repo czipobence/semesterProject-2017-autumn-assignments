@@ -143,6 +143,9 @@ case class Lang[T](f: List[T] => Boolean) {
 
 Note that due to the current limitations of the Stainless framework, instead of $\exists$ we have to use $\forall$, applying the fact that for a predicate $p$ we have $\exists(p) = ! \forall(!p)$
 
+
+This approach is quite similar to the implementation with Sets, it also ensures uniqueness, and the values, for which the function is true can not be enumerated. However, with functions we can implement infinite languages, on the other hand with the other two approach we can only model languages with arbitrary many words.
+
 \subsection{Comparison}
 \label{sect:impl.comp}
 The comparison of different ways of implementation can be found in Table~\ref{tab:implComparison}.
@@ -169,13 +172,46 @@ The comparison of different ways of implementation can be found in Table~\ref{ta
 
 \end{center}
 
-For my work, I selected the non-unique/ordered list representation of languages. The core motivation behind that decision was that this way languages can be iterated using structural induction, even though this way theorems get a bit more complicated than in the other cases. The other main reason for that was that this way, the words are not required to have a total order, unlike the unique and ordered case.
+For my work, I selected the non-unique and unordered list representation of languages. The core motivation behind that decision was that this way languages can be iterated using structural induction, even though this way theorems get a bit more complicated than in the other cases. The other main reason for that was that this way, the words are not required to have a total order, unlike the unique and ordered case.
 
 \subsection{Regular Expressions}
 \label{sect:regExImpl}
 
-In the implementation of regular expressions I differed from their original definition. For sake of simplicity lets restrict them to allow only two constants to appear in the regular expressions, but they can be any language $\languagei{1}, \languagei{2}$. Let the set of such regular expression be denoted by $\regexsetl$.
+In the implementation of regular expressions I differed from their original definition. Instead of constants, but they can be any language $\languagei{1}, \languagei{2}$. Let the set of such regular expression be denoted by $\regexsetl$.
+
+Since these regular expressions are parametrized with $\languagei{1}, \languagei{2}$ let them have a method \\ \inline{eval(l1: Lang[T], l2: Lang[T]): Lang[T]} that takes two languages as parameters and evaluates the value of the regular expression with respect to it.
+
 
 Constants and operations are defined as case classes. \inline{L1} and \inline{L2} has no arguments, \inline{Union} and \inline{Concat} take two regular expressions, whereas \inline{Pow} (that replaces the star in the implementation) takes a regular expression and a natural number.
 
-The regular expression implementation has a method \\ \inline{eval(l1: Lang[T], l2: Lang[T]): Lang[T]} that takes two languages as parameters and evaluates the value of the regular expression with respect to it.
+\begin{Code}{Stainless}{lst:regEx}{Implementing regular expressions}
+sealed abstract class RegEx {
+//evaluate the regular expression to a language
+def eval[T](l1: Lang[T], l2: Lang[T]): Lang[T]
+}
+
+case class L1() extends RegEx {
+  override def eval[T](l1: Lang[T], l2: Lang[T]): Lang[T] = l1
+}
+
+case class L2() extends RegEx {
+  override def eval[T](l1: Lang[T], l2: Lang[T]): Lang[T] = l2
+}
+
+case class Union(left: RegEx, right: RegEx) extends RegEx {
+  override def eval[T](l1: Lang[T], l2: Lang[T]): Lang[T] = 
+      (left.eval(l1, l2) ++ right.eval(l1, l2))
+}
+
+case class Conc(left: RegEx, right: RegEx) extends RegEx {
+  override def eval[T](l1: Lang[T], l2: Lang[T]): Lang[T] = 
+      (left.eval(l1, l2) concat right.eval(l1, l2))
+}
+
+case class Pow(expr: RegEx, pow: BigInt) extends RegEx {
+  require(pow >= BigInt(0))
+  override def eval[T](l1: Lang[T], l2: Lang[T]): Lang[T] = 
+      (expr.eval(l1, l2) ^ pow)
+}
+\end{Code}
+

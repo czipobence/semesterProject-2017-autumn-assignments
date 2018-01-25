@@ -100,11 +100,10 @@ Since languages are set of words, we can define basic set operations such as
 
 We can also define a concatenation operation for languages, that takes all the words from the first language and appends all of them to the second language. Formally, let $\languagei{1} \subseteq \alphabetpow{*}$ and $\languagei{2} \subseteq \alphabetpow{*}$ be two languages. The concatenation of two languages is $\languagei{1} \concatop \languagei{2} = \{ u_1 u_2 \suchthat u_1 \in \languagei{1}, u_2 \in \languagei{2} \}$
 
-With the notion of concatenation, we can also define power of languages. The n'th power of a language \languagesymbol is $\languagesymbol$ combined to itself n-1 times. Formally, we can define $\languagepow{n}$ inductively: let $\languagepow{0} = \{ \emptyword \}$ and $\languagepow{i+1} = \languagepow{i} \concatop \languagesymbol$.
+With the notion of concatenation, we can also define power of languages. The n'th power of a language \languagesymbol is $\languagesymbol$ combined to itself n-1 times. Formally, we can define $\languagepow{n}$ inductively: let $\languagepow{0} = \{ \emptyword \}$ and $\languagepow{i+1} = \languagesymbol \concatop \languagepow{i} $.
 
 We can also define the \emph{Kleene star} of a language as $\languagepow{*} = \bigcup_n \languagepow{n}$. Or we can rephrase it as $\languagepow{*} = \{ \wordi{1} \ldots \wordi{n} \suchthat n \geq 0, \forall i \in [1,n]. \wordi{i} \in \languagesymbol \}$.
 
-This approach is quite similar to the implementation with Sets, it also ensures uniqueness, and the values, for which the function is true can not be enumerated. However, with functions we can implement infinite languages, on the other hand with the other two approach we can only model languages with arbitrary many words.
 
 \subsection{Regular Expressions}
 

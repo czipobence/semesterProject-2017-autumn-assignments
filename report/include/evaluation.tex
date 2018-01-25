@@ -1,4 +1,19 @@
-\section{Performance}
+\section{Conclusion and Future Work}
 
-All lemmas and theorems are shown to be verifying and terminating except for the ones presented in Section~\ref{sect:thmRegEx}. The total time required for verification on a pc with Dual-Core Intel® Core™ i5-4210U CPU @ 1.70GHz processor and 8GB memory is 1670.178s with the longest time for a single step being 241.744s. For termination, the total time required on the same architecture is 1936.337s, with the longest step lasting for 613.622s (\inline{couldHaveDefinedOtherWay}).
+\subsection{Summary}
 
+During the semester I analyzed different implementations to represent formal languages in Scala. I picked one form in which I gave a complete implementation and proved various theorems and lemmas. 
+
+All the theorems presented in this report, but for the regular expression ones were shown to be sound and cleared to be terminating. This means in total 95 functions (both methods and lemmas) with 651 condition checks. The total time required for verification on a pc with Dual-Core Intel® Core™ i5-4210U CPU @ 1.70GHz processor and 8GB memory is 5127.148s with the longest time for a single step being 318.947s (postcondition for \inline{clAssociative} that is required by Theorem~\ref{the:associativity}). For termination, the total time required on the same architecture is 1936.337s, with the longest step lasting for 613.622s (\inline{couldHaveDefinedOtherWay} that is presented in Theorem~\ref{the:couldHaveDefinedOtherWay}).
+
+Eventually, based on the formal language implementation I implemented regular expression and using the proved properties of languages, I sketched a not-yet-complete proof for a theorem about regular expressions.
+
+\subsection{Future Work}
+
+Even though some results are achieved, the work is not done yet. Part of the future work can include
+\begin{itemize}
+	\item Experimenting with other language representations, as different approaches might prove more efficient or simply more elegant than using lists.
+	\item Finishing the proof for Lemma~\ref{lem:regexSubsetStar} and generalize the statement for regular expressions constructed of arbitrary number of languages.
+	\item Trying to prove further statements about regular expressions
+	\item Examining other abstractions using formal languages
+\end{itemize}

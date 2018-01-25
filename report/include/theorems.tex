@@ -8,7 +8,7 @@ In this section, all theorems and stainless proofs are phrased and presented con
 
 \subsubsection{Equalities}
 
-In the sketch, we used the \inline{==} operator to check if two languages are the same.However, overriding such operator can cause unexpected behavior in Stainless, and for this reason, we need to define our own operator for that.
+In the sketch, we used the \inline{==} operator to check if two languages are the same. However, overriding such operator can cause unexpected behavior in Stainless, and for this reason, we need to define our own operator for that.
 
 \begin{ShortCode}{Stainless}
  def sameAs(that: Lang[T]): Boolean = {
@@ -39,7 +39,7 @@ def --(that: Lang[T]): Boolean = Lang[T](this.list--that.list)
 
 \subsubsection{Language operations}
 
-The implementation for concatenation of languages has already been presented. However, for efficiency, we can define more operations.
+The implementation for concatenation of languages has already been presented, but lets define some other operations as well:
 
 The power of a language can be defined the following way:
 
@@ -74,7 +74,7 @@ This definition has to really useful properties:
 	\item if $\wordsymbol \in \languagepow{*}$ then $\exists n. ~ \wordsymbol \in \languageclose{n}$ 
 \end{itemize}
 
-In other words, if we would like to prove that a word is in the star of a language, it is enough to construct an integer n such that the word will be the n'th close of the language. The big advantage compared to the power of languages is that in this case we only have to tell an upper bound for $j$ for which the word is in $\languagepow{j}$.
+In other words, if we would like to prove that a word is in the star of a language, it is enough to construct an integer n such that the word will be the n'th close of the language. The big advantage compared to the power of languages is that in this case we only have to tell an upper bound for $j$ for which the word is in $\languageclose{j}$.
 
 Such function can be implemented the following way:
 
@@ -87,7 +87,7 @@ Such function can be implemented the following way:
 
 \subsubsection{Helper methods}
 
-In order to be able to efficiently define the language operations, some helper methods have been already introduced. Namely \inline{concatList} which in functionality is basically the same as the concat operation, just it is for lists not languages. The \emph{appendToAll} function takes a word and a language and appends the word to the end of each word in that language.
+In order to be able to efficiently define the language operations, some helper methods have been already introduced. Namely \inline{concatList} which in functionality is basically the same as the concat operation, just it is for lists not languages. The \inline{appendToAll} function takes a word and a language and appends the word to the end of each word in that language.
 
 Intuitively, as we defined \inline{appendToAll}, we might want to define a similar operation \inline{prependToAll}, which prepends a single word to any other words in a language.
 
@@ -99,8 +99,28 @@ Intuitively, as we defined \inline{appendToAll}, we might want to define a simil
  }
 \end{ShortCode}
 
+In some of the lemmas are also using a different operation, reverse all that reverts each word in a language.
+
+\begin{ShortCode}{Stainless}
+def reverseAll[T](l: List[List[T]]): List[List[T]] ={
+  l match {
+    case Nil() => Nil[List[T]]
+    case Cons(x,xs) => x.reverse :: reverseAll(xs)
+  }
+}
+\end{ShortCode}
+
+The reason I defined this function is to ensure transition between \inline{appendToAll} and \inline{preprendToAll}, namely
+
+\begin{ShortCode}{Stainless}
+prependToAll(prefix,l) == 
+  reverseAll(appendToAll(reverseAll(l) , prefix.reverse))
+\end{ShortCode}
 
 
+Thus instead of proving similar theorems twice, in code it is more convenient to transform some lemma into an other applying the above equation and after using some other equalities.
+
+This \inline{reverseAll} operation is only included for sake of completeness and better understandability of the code, it will not be used in proof presented in the following sections.
 
 \subsection{Notations}
 
@@ -108,7 +128,7 @@ Writing long proofs using operation names and strict syntax can be space demandi
 
 From now on, lets use \inline{==} for language equality, and \inline{===} for strict equality, namely marking the equality of the representing lists.
 
-Instead of \inline{++} and \inline{--} operators, use the corresponding set operations, $\cup$ and $\setminus$.
+Instead of \inline{++} and \inline{--} operators, use the corresponding set operations, $\cup$ and $\setminus$. Note that their usage might seem a bit mixed in the next theorems, but the reason for that is that \inline{--} is more suitable for listings and $\cup$ is more suitable for mathematical formulas.
 
 Also let $\wordsymbol \in L$ denote the \inline{contains} function, and use $\subseteq$ as a shorthand for \inline{subsetOf}. For concatenation, we can use the $\concatop$ operator, or to make it more function-like, we can use $cl(\languagei{1} , \languagei{2})$. Since \emph{concat} and \emph{concatLists} are functionally really similar, we can use the same notation for both. Lets also abbreviate the function names, \inline{appendToAll} as aa and \inline{prependToAll} as pa.
 
@@ -214,7 +234,7 @@ Stainless can verify the theorem above without further aid, however we can also 
  $\emptyset$
 \end{ShortCode}
 
-\subsubsection{Structural Theorems and Lemmas}
+\subsubsection{Distributivity}
 
 The previous theorems were straightforward from the definition, Stainless can prove them without a hint. However, in order to prove more complex theorems, we have to define some helper lemmas and theorems.
 
@@ -223,7 +243,7 @@ First of all, we would like to show, that even though we defined list concatenat
 \begin{lemma}
 	\label{lem:clInductLeft}
 	For any languages $\languagei{1}, \languagei{2}$ over the same alphabet, where $\languagei{1} = hd1::tl1$ we have
-	cl(hd1::tl1, $ \languagei{2}$) == pa(hd1,$ \languagei{2}$) ++ cl(tl1,$ \languagei{2}$)
+	cl(hd1::tl1, $ \languagei{2}$) == pa(hd1,$ \languagei{2}$) $\cup$ cl(tl1,$ \languagei{2}$)
 \end{lemma}
 
 If $ \languagei{2}$ is $\emptyset$, we can apply the previous theorem and have \inline{cl((hd1::tl1), $\emptyset$) = $\emptyset$} and \inline{ [pa(hd,$\emptyset$)] = $\emptyset$  } and \inline{cl(tl,$\emptyset$) = $\emptyset$}, and the proof is straightforward.
@@ -265,19 +285,19 @@ Intuitively, we can generalize the following lemma to some kind of distributivit
 
 \begin{lemma}[Left Distributivity]
 	\label{lem:clLeftDistributiveAppend}
-	For any languages $\languagei{1}, \languagei{2}, \languagei{3}$ we have $(\languagei{1} ++ \languagei{2}) \concatop \languagei{3} == \languagei{1} \concatop \languagei{3} ++ \languagei{2} \concatop \languagei{3}$.
+	For any languages $\languagei{1}, \languagei{2}, \languagei{3}$ we have $(\languagei{1} \cup \languagei{2}) \concatop \languagei{3} == \languagei{1} \concatop \languagei{3} \cup \languagei{2} \concatop \languagei{3}$.
 \end{lemma}
 
 \begin{lemma}[Right Distributivity]
 	\label{lem:clRightDistributiveAppend}
-	For any languages $\languagei{1}, \languagei{2}, \languagei{3}$ we have $(\languagei{1} ++ \languagei{2}) \concatop \languagei{3} == \languagei{1} \concatop \languagei{3} ++ \languagei{2} \concatop \languagei{3}$.
+	For any languages $\languagei{1}, \languagei{2}, \languagei{3}$ we have $\languagei{1} \concatop (\languagei{2} \cup \languagei{3}) == \languagei{1} \concatop \languagei{2} \cup \languagei{1} \concatop \languagei{3}$.
 \end{lemma}
 
 The proof for these two lemmas are not included, but in can be seen that they can be devised inductively. They are implemented in functions \inline{clLeftDistributiveAppend} and \inline{clRightDistributiveAppend}.
 
 \subsubsection{Concatenation to the Unit Language}
 
-\begin{theorem}[Unit Concatenation (Right)]
+\begin{theorem}[Unit Concatenation - Right]
 	\label{the:rightUnitConcat}
 	$\forall \languagei{} \subseteq \alphabetpow{*}.$ we have  $\languagei{} \concatop \unitlang = \languagei{}$
 %$\unitlang \concatop \languagei{} = \languagei{}$
@@ -286,16 +306,16 @@ The proof for these two lemmas are not included, but in can be seen that they ca
 If L is an empty language, the solution is straightforward, we can apply the previous theorem, $\emptyset \concatop \{\emptyword\} = \emptyset$. Otherwise, we can apply structural induction on \inline{L = hd :: tl} the following way:
 
 \begin{ShortCode}{Stainless}
- cl(hd::tl, $\unitlang$)              == // LM1
- pa(hd, $\unitlang$) ++ cl(tl, $\unitlang$)      == // LM2
+ cl(hd::tl, $\unitlang$)              == // (1)
+ pa(hd, $\unitlang$) ++ cl(tl, $\unitlang$)      == // (2)
  [hd] ++ cl(tl, $\unitlang$)          == // by the I.H.
  [hd] ++ tl                ==
  L 
 \end{ShortCode}
 
-Note that the step marked with LM1 applies Lemma~\ref{lem:clInductLeft}. The LM2 step is almost trivial to see, however Stainless can't prove it on its own. For the complete proof see the function \inline{prependToEmptyList}. The proof of the theorem can be found in function \inline{rightUnitConcat}.
+Note that step (1) applies Lemma~\ref{lem:clInductLeft}. The (2) step is almost trivial to see, however Stainless can't prove it on its own. For the complete proof see the function \inline{prependToEmptyList}. The proof of the theorem can be found in function \inline{rightUnitConcat}.
 
-\begin{theorem}[Unit Concatenation (Left)]
+\begin{theorem}[Unit Concatenation - Left]
 	\label{the:leftUnitConcat}
 	$\forall \languagei{} \subseteq \alphabetpow{*}.$ we have $\unitlang \concatop \languagei{} = \languagei{}$
 \end{theorem}
@@ -307,15 +327,17 @@ If not, we know that \inline{L == hd :: tl} so we can write
 
 \begin{ShortCode}{Stainless}
  cl($\unitlist$, hd::tl) == 
- aa($\unitlist$, hd) ++ cl($\unitlist$, tl) == // Theorem~\ref{the:emptyword}
- [hd] ++ cl($\unitlist$, tl) == //by the I.H.
+ aa($\unitlist$, hd) ++ cl($\unitlist$, tl) == // (1)
+ [hd] ++ cl($\unitlist$, tl) == // (2)
  [hd] ++ tl ==
  L
 \end{ShortCode}
 
+In step (1) we applied Theorem~\ref{the:emptyword}, and in step (2) we preformed induction.
+
 The implementation for this theorem is proved in the function \inline{leftUnitConcat}.
 
-\subsubsection{Operations on Equivalent Languages}
+\subsubsection{Congruence Rules}
 
 Since different lists can represent the same language, it is not straightforward that applying the same operation on the same languages leads to the same result. We can, however, state some lemmas that will be useful in the next sections.
 
@@ -334,7 +356,6 @@ We can also state the lemma for the other case, where the left hand side operato
 \end{lemma}
 
 The proof for these lemmas are not included, but shown in functions \inline{clContentEquals} and \inline{clContentEquals2} and in other, referenced sub-lemmas.
-
 
 \subsubsection{Associativity}
 
@@ -364,10 +385,10 @@ Now we can apply the following steps:
 
 \begin{ShortCode}{Stainless}
  $((hd::tl) \concatop \languagei{2}) \concatop \languagei{3}$ == // (1)
- $(pa(hd, \languagei{2}) \cup (tl \concatop \languagei{2})) \concatop \languagei{3}$ == // (2)
- $(pa(hd, \languagei{2}) \concatop \languagei{3}) \cup ((tl \concatop \languagei{2}) \concatop \languagei{3})$ == // (3)
- $(pa(hd, \languagei{2}) \concatop \languagei{3}) \cup (tl \concatop (\languagei{2} \concatop \languagei{3}))$ == // (4)
- $pa(hd, \languagei{2} \concatop \languagei{3}) \cup (tl \concatop (\languagei{2} \concatop \languagei{3}))$ == // (5)
+ $(pa(hd, \languagei{2}) $++$ (tl \concatop \languagei{2})) \concatop \languagei{3}$ == // (2)
+ $(pa(hd, \languagei{2}) \concatop \languagei{3}) $++$ ((tl \concatop \languagei{2}) \concatop \languagei{3})$ == // (3)
+ $(pa(hd, \languagei{2}) \concatop \languagei{3}) $++$ (tl \concatop (\languagei{2} \concatop \languagei{3}))$ == // (4)
+ $pa(hd, \languagei{2} \concatop \languagei{3}) $++$ (tl \concatop (\languagei{2} \concatop \languagei{3}))$ == // (5)
  $(hd::tl) \concatop (\languagei{2} \concatop \languagei{3})$
 \end{ShortCode}
 	
@@ -401,7 +422,7 @@ First, lets present some lemmas that are trivial for stainless.
 	Let $\languagei{1}, \languagei{2}, \languagei{3}$ be three languages. If $\languagei{1} \subseteq \languagei{2}$ and  $\languagei{2} \subseteq \languagei{3}$ then  $\languagei{1} \subseteq \languagei{3}$.
 \end{lemma}
 
-Applying these, we can state two new lemmas:
+Applying these, we can state two congruence rules:
 
 \begin{lemma}
 	\label{lem:sameAsSubsetTrans}
@@ -426,7 +447,7 @@ We can also state, that if a language is subset to an other, than there has to b
 	For all languages $\languagei{1}, \languagei{2}$ such that $\languagei{1} \subseteq \languagei{2}$ there is a language $\languagei{3}$ such that $(\languagei{1} \cup \languagei{3}) == \languagei{2}$.
 \end{lemma}
 
-However, instead of using the existential quantifier, it would be easier to simply specify $\languagei{3}$ as $\languagei{2} \setminus \languagei{1}$.
+However the lemma above is hard to verify with stainless as its capabilities with the existential quantifier are limited. So instead of the quantified version, it would be easier to simply specify $\languagei{3}$ as $\languagei{2} \setminus \languagei{1}$.
 
 We can also state some subset lemmas with the union operation.
 
@@ -453,12 +474,12 @@ Stainless can not prove this lemma on its own, but we can combine previous lemma
 
 \begin{ShortCode}{Stainless}
  $\languagei{1} \concatop \languagei{3} \subseteq $ //(1)
- $(\languagei{1}  \concatop \languagei{3}) \cup ((\languagei{2} \setminus \languagei{1}) \concatop \languagei{3}) $ == //(2)
- $(\languagei{1} \cup (\languagei{2} \setminus \languagei{1})) \concatop \languagei{3} $        == //(3)
+ $(\languagei{1}  \concatop \languagei{3}) $++$ ((\languagei{2} $--$ \languagei{1}) \concatop \languagei{3}) $ == //(2)
+ $(\languagei{1} $++$ (\languagei{2} $--$ \languagei{1})) \concatop \languagei{3} $        == //(3)
  $\languagei{2} \concatop \languagei{3}$
 \end{ShortCode}
 
-In step 1) we applied Lemma~\ref{lem:inUnionSubset}, in step 2) we used distributivity as stated in Lemma~\ref{lem:clRightDistributiveAppend} and in step 3) we applied Lemma~\ref{lem:subsetSplit}. Eventually we have to apply Lemma~\ref{lem:sameAsSubsetTrans} to show that subset relation is transitive through equality.
+In step (1) we applied Lemma~\ref{lem:inUnionSubset}, in step (2) we used distributivity as stated in Lemma~\ref{lem:clRightDistributiveAppend} and in step (3) we applied Lemma~\ref{lem:subsetSplit}. Eventually we have to apply Lemma~\ref{lem:sameAsSubsetTrans} to show that subset relation is transitive through equality.
 
 The following lemma can be proved similarly:
 \begin{lemma}
@@ -493,7 +514,7 @@ If $i$ is $1$ then
  $\languagesymbol$:^1
 \end{ShortCode}
 
-In step 1) we applied Theorem~\ref{the:rightUnitConcat}, and in step 2) we applied Theorem~\ref{the:leftUnitConcat}.
+In step (1) we applied Theorem~\ref{the:rightUnitConcat}, and in step (2) we applied Theorem~\ref{the:leftUnitConcat}.
 
 Otherwise, we can apply induction. We know that $i \ge 2$.
 
@@ -534,7 +555,7 @@ An other useful lemma would be to show that sums in the exponent can be expanded
 
 \begin{lemma}[Language to the sum]
 	\label{lem:powSum}
-	For any language $\languagesymbol$ and numbers $a,b \in \nats$ we have $\languagesymbol ^ {a+b} == (\languagesymbol ^ b) \concatop (\languagesymbol ^ b)$.
+	For any language $\languagesymbol$ and numbers $a,b \in \nats$ we have $\languagesymbol ^ {a+b} == (\languagesymbol ^ a) \concatop (\languagesymbol ^ b)$.
 \end{lemma}
 
 The proof for this lemma can be shown applying induction and associativity, as it is implemented in function \inline{powSum}.
@@ -584,19 +605,19 @@ For the proof of the latter see function \inline{sumClose} in the code.
 
 \subsection{Theorems About Regular Expressions}
 \label{sect:thmRegEx}
-We would like to show that for our regular expression implementation (as defined in Section~\ref{sect:regExImpl}) some properties hold. Recall that the implementation only allows two languages, $\languagei{1}$ and $\languagei{2}$. We would like to prove that $\forall \regex \in \regexsetl.$ if a language $\languagei{}$ is defined by $\regex$ then $\languagei{} \in \pow{(\languagei{1} \cup \languagei{2})}{*}$. Eliminate the star from that expression!
+We would like to show that for our regular expression implementation (as defined in Section~\ref{sect:regExImpl}) some properties hold. Recall that the implementation only allows two languages, $\languagei{1}$ and $\languagei{2}$. We would like to prove that $\forall \regex \in \regexsetl.$ if a language $\languagei{}$ is defined by $\regex$ then $\languagei{} \in \pow{(\languagei{1} \cup \languagei{2})}{*}$. But in order to be able to handle the Kleene star in that expression, rephrase the theorem a bit:
 
 \begin{theorem}
 	For every regular expression $\regex$ defined over the languages $\languagei{1}, \languagei{2}$, if $\languagei{}$ is defined by r, $\exists i \in \nats. ~ \languagesymbol \subseteq \close{(\languagei{1} \cup \languagei{2})}{i}$
 \end{theorem}
 
-In order to prove this, for each regular expression we have to guess the exponent $i$. For this, we have to define an other method \inline{evalExp():BigInt}. The value of it:
+In order to prove this, for each regular expression we have to guess the exponent $i$. For this, we have to define an other method \inline{evalExp():BigInt}. Let the value of it be defined the following way:
 
 \begin{itemize}
-	\item for \inline{L1} and \inline{L2} is $1$,
-	\item for \inline{Union(r1,r2)} is \inline{max(r1.evalExp(), r2.evalExp())},
-	\item for \inline{Conc(r1,r2)} is  \inline{r1.evalExp() + r2.evalExp()}
-	\item for \inline{Pow(r,n)} is  \inline{r.evalExp() * n}
+	\item for \inline{L1} and \inline{L2} let it be $1$,
+	\item for \inline{Union(r1,r2)} let it be \inline{max(r1.evalExp(), r2.evalExp())},
+	\item for \inline{Conc(r1,r2)} let it be  \inline{r1.evalExp() + r2.evalExp()}
+	\item for \inline{Pow(r,n)} let it be  \inline{r.evalExp() * n}
 \end{itemize}
 
 We can state a lemma nearly equivalent to the previous theorem:
@@ -605,15 +626,17 @@ We can state a lemma nearly equivalent to the previous theorem:
 	For every regular expression $\regex$ defined over the languages $\languagei{1}, \languagei{2}$, if $\languagei{}$ is defined by r, if i = \inline{r.evalExp()} then $\languagesymbol \subseteq \close{(\languagei{1} \cup \languagei{2})}{i}$
 \end{lemma}
 
+Lets try to prove this lemma for each case.
+
 For \inline{L1} and \inline{L2} it is trivial that $i=1$ is sufficient because of Lemma~\ref{lem:inUnionSubset}.
 
 For \inline{Union(r1,r2)} we can say that $\close{(\languagei{1} \cup \languagei{2})}{a} \subseteq \close{(\languagei{1} \cup \languagei{2})}{max(a,b)}$ and $\close{(\languagei{1} \cup \languagei{2})}{b} \subseteq \close{(\languagei{1} \cup \languagei{2})}{max(a,b)}$ (a,b are \inline{r1.evalExp()} and \inline{r2.evalExp()}). From there we can apply the subset distributivity over union (Lemma~\ref{lem:unionSubset}) and with induction and subset transitivity (Lemma~\ref{lem:subsetOfTransitive}) we can prove the statement.
 
 For \inline{Concat(r1,r2)} we chose \inline{evalExp = r1.evalExp() + r2.evalExp()}. Here the proof is similar to the previous case, but now we use Lemma~\ref{lem:sumClose} about the union of closes being contained in the close of sum. Since we only want to prove inclusion, the weaker (and proved) form of the lemma is sufficient.
 
-We can say that \inline{Pow(r,n)} can be expressed as \\ \inline{Conc(r, Conc(r, Conc(..., Conc(r, Pow(r,1)) ...)))} which is \\ \inline{Conc(r, Conc(r, Conc(..., Conc(r, r) ...)))}, so this is only a syntactic sugar in regular expressions. For this reason, lets omit this case in the proofs.
+We can say that \inline{Pow(r,n)} can be expressed as \\ \inline{Conc(r,Pow(r,n-1))} where we can apply induction, we know that if \inline{r.evalExp()}=i then $r.eval(\languagei{1}, \languagei{2})\subseteq \close{(\languagei{1} \cup \languagei{2})}{i}$ and by induction we know that $Pow(r,n-1).eval(\languagei{1}, \languagei{2})\subseteq \close{(\languagei{1} \cup \languagei{2})}{i * (n-1)}$, so applying the previous case we can prove the statement.
 
-Even though the proof is sound in paper, its Stainless implementation is not yet implemented completely, some steps are not verifying. The initial version of the proof is included in function \inline{regexSubsetStar} in the file \inline{RegEx.scala}.
+Even though the proof is sound in paper, its Stainless implementation is not yet done completely, some steps are not verifying. The initial version of the proof is included in function \inline{regexSubsetStar} in the file \inline{RegEx.scala}.
 
 For the previous proof to be correct, we have to show that while taking the close of a language we do not perform an invalid operation, namely each exponent is nonnegative.
 
@@ -622,4 +645,4 @@ For the previous proof to be correct, we have to show that while taking the clos
 	For each regular expression $\regex$ we have \inline{r.evalExp() > 0}.
 \end{lemma}
 
-The proof for this lemma is trivial as for the constant values the exponent is positive, and both maximum selection and addition (of positive numbers) preserves positiveness.
+The proof for this lemma is trivial as for the constant values the exponent is positive, and both maximum selection, addition and multiplication of positive numbers preserves positiveness.
