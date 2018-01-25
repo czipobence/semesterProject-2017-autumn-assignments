@@ -186,7 +186,7 @@
 %	TITLE PAGE
 %----------------------------------------------------------------------------------------
 
-\title[Semester project]{Full Title of the Talk} % The short title appears at the bottom of every slide, the full title is only on the title page
+\title[Semester project]{Verification of Formal Languages} % The short title appears at the bottom of every slide, the full title is only on the title page
 
 \author{Bence Czipó} % Your name
 \institute[] % Your institution as it will appear on the bottom of every slide, may be shorthand to save space
@@ -195,7 +195,7 @@
 \medskip
 \textit{bence.czipo@epfl.ch} % Your email address
 }
-\date{January 25, 2018} % Date, can be changed to a custom date
+\date{\today} % Date, can be changed to a custom date
 
 \begin{document}
 
@@ -313,7 +313,7 @@
 		
 		\item Words $\rightarrow$\inline{ List[T]}
 		
-		\only<2->{
+		\onslide<2->{
 			\begin{itemize}
 				\item $\emptyword$ can be represented as \inline{Nil[T]},
 				\item $\lenghtfunc{\wordsymbol}$ can be represented as \inline{w.size}
@@ -324,7 +324,7 @@
 		}
 		
 		\onslide<3->{\item Languages  $\rightarrow$} \only<3>{???}
-		\only<4->{
+		\onslide<4->{
 			\begin{itemize}
 				\item \inline{Set[Words]}
 				\item \inline{Words -> Boolean}
@@ -437,7 +437,7 @@ def appendToAll( l: List[List[T]],
 			Unique & Yes & Yes & \highlightbad{No} & Yes \\ \hline
 			Iterable & No & \highlighgood{Yes} & \highlighgood{Yes} & No \\ \hline
 			Infinity & No & No & No & \highlighgood{Yes} \\ \hline
-			Equality & Trivial & Content = & Content = &\highlighgood{ $\forall$ expr} \\ \hline
+			Equality & Trivial & Content = & Content = &\highlightbad{ $\forall$ expr} \\ \hline
 			Concat &\highlightbad{???} & \highlighgood{S.I. 2x} & \highlighgood{S.I. 2x} & \highlightbad{Complex} \\ \hline
 			Contain & Trivial & Trivial & Trivial & Trivial \\ \hline
 			Set ops ($\cup, ~ \cap, \ldots$) & Trivial & \highlightbad{Uniqueness} & Trivial & Trivial \\ \hline
@@ -583,7 +583,7 @@ This is similar to the case in real numbers where $a^0 = 1$.
 
 Can we have a rule like $a^1 = a$
 
-\only<2->{
+\onslide<2->{
 	
 \begin{lemma}[First power of languages]
 	\label{lem:langToFirst}
@@ -591,7 +591,7 @@ Can we have a rule like $a^1 = a$
 \end{lemma}	
 }
 
-\only<3->{
+\onslide<3->{
 \begin{proof}
 	$\languagesymbol^1$ = (by definition) \\
 	$\languagesymbol \concatop (\languagesymbol^0$) = (by definition) \\
@@ -639,7 +639,7 @@ Can we have a rule like $a^1 = a$
 \begin{frame}{Theorems About Power of Languages}
 	\begin{lemma}[Language to the sum]
 		\label{lem:powSum}
-		For any language $\languagesymbol$ and numbers $a,b \in \nats$ we have $\languagesymbol ^ {a+b} == (\languagesymbol ^ b) \concatop (\languagesymbol ^ b)$.
+		For any language $\languagesymbol$ and numbers $a,b \in \nats$ we have $\languagesymbol ^ {a+b} = (\languagesymbol ^ b) \concatop (\languagesymbol ^ b)$.
 	\end{lemma}
 	
 	\begin{proof}
@@ -677,7 +677,7 @@ And so on...
 	
 	\begin{lemma}
 		\label{lem:sumCloseSame}
-		For every language $\languagei{}$ and $a,b \in \nats$ we have $\languageclose{a+b} == \languageclose{a} \concatop \languageclose{b} $
+		For every language $\languagei{}$ and $a,b \in \nats$ we have $\languageclose{a+b} = \languageclose{a} \concatop \languageclose{b} $
 	\end{lemma}
 	\onslide<2-> {
 		Does it even hold?
@@ -902,12 +902,46 @@ For every regular expression $\regex$ defined over the languages $\languagei{1},
 	\end{proof}
 \end{frame}
 
-\begin{frame}{Conclusion and Future Work}
+\begin{frame}{Sounds good, doesn't work?}
+	Every theorem about words and languages has been verified by Stainless.
+
+	\onslide<2->{About regular expressions, only the exponent positiveness lemma has been verified, the other has been proven for the constant and union cases.}	
+
+	\onslide<3->{Every verifying theorem and lemma was cleared to be terminating. }
 	
+	\onslide<4->{Metrics (excluding lemmas about regular expressions):
+		\begin{itemize}
+			\item 95 functions (methods and lemmas)
+			\item 651 verified conditions
+			\item 1670.178s of total time for verification (longest: 241.744s)
+			\item 1936.337s of total time for checking termination 
+		\end{itemize}
+		
+		CPU: Dual-Core Intel® Core™ i5-4210U CPU @ 1.70GHz processor RAM: 8GB}
+\end{frame}
+
+\begin{frame}{Conclusion and Future Work}
+	Summary:
+	\begin{itemize}
+		\item analyzed different language representations
+		\item presented a formal language implementation using lists
+		\item based on that implementations proved properties of languages
+		\item applied implemented abstractions to represent regular expressions and prove theorems about them
+	\end{itemize}
+	
+	
+	\onslide<2->{	
+	Possible future work:
+		\begin{itemize}
+			\item Experiment with other language representation
+			\item Finish incomplete lemmas about regular expressions
+			\item Try to prove further statements about regular expressions
+			\item Examine other abstractions using formal languages
+		\end{itemize}}
 \end{frame}
 
 \begin{frame}
-\Huge{\centerline{Questions?}}
+\Huge{ \centerline{Questions?}}
 \end{frame}
 
 %----------------------------------------------------------------------------------------
