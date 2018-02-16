@@ -50,15 +50,6 @@ case class Lang[T](list: List[List[T]]) {
 
   def contains(word: List[T]): Boolean = list.contains(word)
 
-  /*def power (i: Int): Lang[T] = {
-    require(i >= BigInt(0))
-    decreases(i)
-    i match {
-      case 0 => Lang[T](List(Nil()))
-      case _ => this concat (this power (i-1))
-    }
-  }*/
-
   def ^ (i: BigInt): Lang[T] = {
     require(i >= BigInt(0))
     decreases(i)
@@ -316,13 +307,8 @@ object LangSpecs {
     require(n >= BigInt(0))
     (nullLang() close n) sameAs unitLang() because {
       n match {
-        case BigInt(0) => check{(nullLang() close 0) == unitLang()}
-        case _ => {
-          check {(nullLang() close n) == (nullLang() close (n-1)) ++ (nullLang() ^ n)} &&
-          check {(nullLang() close (n-1)) ++ (nullLang() ^ n) == unitLang() ++ (nullLang() ^ n) because{nullLangClose(n-1)}} &&
-          check {unitLang() ++ (nullLang() ^ n) == unitLang() ++ nullLang()} &&
-          check {unitLang() ++ nullLang() == unitLang()}
-        }
+        case BigInt(0) => true
+        case _ => nullLangClose(n-1)
       }
     }
   }.holds
@@ -331,12 +317,13 @@ object LangSpecs {
     require(n >= BigInt(0))
     (unitLang() close n) sameAs unitLang() because {
       n match {
-        case BigInt(0) => check{(unitLang() close 0) sameAs unitLang()}
+        case BigInt(0) => true
+        /*case _ => {
+          unitLangClose(n-1) && unitLangPow(n)
+        }*/
         case _ => {
-          check {(unitLang() close n) sameAs (unitLang() close (n-1)) ++ (unitLang() ^ n)} &&
-          check {(unitLang() close (n-1)) ++ (unitLang() ^ n) sameAs unitLang() ++ (unitLang() ^ n) because{unitLangClose(n-1)}} &&
-          check {unitLang() ++ (unitLang() ^ n) sameAs unitLang() ++ unitLang() because{unitLangPow(n)}} &&
-          check {unitLang() ++ unitLang() sameAs unitLang()}
+          check {(unitLang() close n) sameAs unitLang() ++ (unitLang() ^ n) because{unitLangClose(n-1)}} &&
+          check {unitLang() ++ (unitLang() ^ n) sameAs unitLang() ++ unitLang() because{unitLangPow(n)}}
         }
       }
     }
